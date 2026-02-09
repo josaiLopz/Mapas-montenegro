@@ -1,0 +1,12 @@
+INSERT INTO permissions (controller, action, description) VALUES
+('Users', 'index', 'Listado de usuarios'),
+('Users', 'add', 'Alta de usuarios'),
+('Users', 'edit', 'Edición de usuarios'),
+('Users', 'delete', 'Eliminar usuarios');
+
+
+INSERT INTO roles_permissions (role_id, permission_id)
+SELECT 1, id
+FROM permissions
+WHERE controller = 'Users'
+AND action IN ('index','add','edit','delete');
