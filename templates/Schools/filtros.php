@@ -19,6 +19,7 @@
   .col-4{ grid-column: span 4; }
   .col-6{ grid-column: span 6; }
   .col-12{ grid-column: span 12; }
+
   @media(max-width: 1100px){ .col-3,.col-4,.col-6{ grid-column: span 12; } }
 
   .hidden{ display:none; }
@@ -1497,6 +1498,7 @@ window.addEventListener('message', (ev) => {
   }
 });
 </script>
+<!-- ===== CHATBOT WIDGET ===== -->
 
 
 <script

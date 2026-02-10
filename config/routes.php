@@ -75,12 +75,14 @@ return function (RouteBuilder $routes): void {
          */
         $builder->connect('/pages/*', 'Pages::display');
         $builder->connect('/schools/import', ['controller' => 'Schools', 'action' => 'import']);
-$builder->connect(
-    '/schools/{school_id}/materials-manager',
-    ['controller' => 'SchoolMaterials', 'action' => 'index'],
-    ['pass' => ['school_id']]
-);
-        /*
+        $builder->connect(
+            '/schools/{school_id}/materials-manager',
+            ['controller' => 'SchoolMaterials', 'action' => 'index'],
+            ['pass' => ['school_id']]
+        );
+        $builder->connect('/chatbot/ask', ['controller' => 'Chatbot', 'action' => 'ask']);
+        $builder->connect('/support', ['controller' => 'Support', 'action' => 'index']);
+                /*
          * Connect catchall routes for all controllers.
          *
          * The `fallbacks` method is a shortcut for
