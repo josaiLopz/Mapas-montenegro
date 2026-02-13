@@ -29,7 +29,7 @@ class SchoolsController extends AppController
 
     public function view($id = null)
     {
-        $school = $this->Schools->get($id, ['contain' => ['Users']]);
+        $school = $this->Schools->get($id, ['contain' => ['Users', 'Estados', 'Municipios']]);
         $this->set(compact('school'));
     }
 

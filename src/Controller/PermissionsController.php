@@ -17,7 +17,10 @@ class PermissionsController extends AppController
      */
     public function index()
     {
-        $permissions = $this->paginate($this->Permissions->find()->contain(['Roles']));
+        $permissions = $this->paginate(
+            $this->Permissions->find()->contain(['Roles']),
+            ['limit' => 10]
+        );
         $this->set(compact('permissions'));
         // $query = $this->Permissions->find();
         // $permissions = $this->paginate($query);

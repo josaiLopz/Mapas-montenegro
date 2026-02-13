@@ -39,14 +39,25 @@ class UsersController extends AppController
          // Aplicar filtros si existen
     $filters = $this->request->getQueryParams();
 
-    if (!empty($filters['name'])) {
-        $query->where(['Users.name LIKE' => '%' . $filters['name'] . '%']);
-    }
-    if (!empty($filters['apellido_paterno'])) {
-        $query->where(['Users.apellido_paterno LIKE' => '%' . $filters['apellido_paterno'] . '%']);
-    }
-    if (!empty($filters['apellido_materno'])) {
-        $query->where(['Users.apellido_materno LIKE' => '%' . $filters['apellido_materno'] . '%']);
+    if (!empty($filters['nombre_completo'])) {
+        $fullName = trim((string)$filters['nombre_completo']);
+        $parts = preg_split('/\s+/', $fullName) ?: [];
+
+        foreach ($parts as $part) {
+            $term = trim((string)$part);
+            if ($term === '') {
+                continue;
+            }
+
+            $likeTerm = '%' . $term . '%';
+            $query->where([
+                'OR' => [
+                    'Users.name LIKE' => $likeTerm,
+                    'Users.apellido_paterno LIKE' => $likeTerm,
+                    'Users.apellido_materno LIKE' => $likeTerm,
+                ],
+            ]);
+        }
     }
     if (!empty($filters['email'])) {
         $query->where(['Users.email LIKE' => '%' . $filters['email'] . '%']);
@@ -213,20 +224,59 @@ public function editProfile()
 {
     $identity = $this->request->getAttribute('identity');
     $user = $this->Users->get($identity->getIdentifier());
-        $oldData = json_encode($user->toArray());
+    $oldData = json_encode($user->toArray());
 
     if ($this->request->is(['patch', 'post', 'put'])) {
-
         $data = $this->request->getData();
+        $hasher = new DefaultPasswordHasher();
+        $canSave = true;
+        $passwordFields = ['current_password', 'new_password', 'confirm_password'];
 
         // Saca avatar del patch para que NUNCA intente guardarse como UploadedFile
         $file = $data['avatar'] ?? null;
         unset($data['avatar']);
 
-        // Parchea solo texto
+        $currentPassword = trim((string)($data['current_password'] ?? ''));
+        $newPassword = trim((string)($data['new_password'] ?? ''));
+        $confirmPassword = trim((string)($data['confirm_password'] ?? ''));
+        $wantsPasswordChange = $currentPassword !== '' || $newPassword !== '' || $confirmPassword !== '';
+
+        foreach ($passwordFields as $passwordField) {
+            unset($data[$passwordField]);
+        }
+
+        $fields = ['name', 'apellido_paterno', 'apellido_materno', 'email'];
+
+        if ($wantsPasswordChange) {
+            if ($currentPassword === '' || !$hasher->check($currentPassword, (string)$user->password)) {
+                $this->Flash->error('La contrasena actual es incorrecta.');
+                $canSave = false;
+            }
+
+            if ($newPassword === '' || strlen($newPassword) < 8) {
+                $this->Flash->error('La nueva contrasena debe tener al menos 8 caracteres.');
+                $canSave = false;
+            }
+
+            if ($newPassword !== $confirmPassword) {
+                $this->Flash->error('La confirmacion de contrasena no coincide.');
+                $canSave = false;
+            }
+
+            if ($canSave) {
+                $data['password'] = $newPassword;
+                $fields[] = 'password';
+            }
+        }
+
         $user = $this->Users->patchEntity($user, $data, [
-            'fields' => ['name', 'email']
+            'fields' => $fields
         ]);
+
+        if (!$canSave) {
+            $this->set(compact('user'));
+            return;
+        }
 
         // Maneja archivo aparte
         if ($file instanceof \Laminas\Diactoros\UploadedFile && $file->getError() === UPLOAD_ERR_OK) {

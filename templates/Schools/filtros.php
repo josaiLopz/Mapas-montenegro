@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // templates/Schools/filtros.php
 ?>
 
@@ -413,7 +413,7 @@
 </div>
 
 <div id="edit-modal" style="position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:10000;">
-  <div style="background:#fff; width:min(980px, 92vw); height:min(760px, 92vh); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.25); overflow:hidden; display:flex; flex-direction:column;">
+  <div style="background:#fff; width:min(980px, 92vw); height:min(760px, 92vh); max-height:52vh; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.25); overflow:hidden; display:flex; flex-direction:column;">
     <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid #eee;">
       <strong>Editar escuela</strong>
       <button type="button" id="edit-modal-close" style="border:0; background:#eee; border-radius:8px; padding:6px 10px; cursor:pointer;">Cerrar</button>
@@ -489,6 +489,7 @@ let editMarker = null;
 // coords pendientes y coords originales (para guardar/cancelar)
 let pendingCoords = null;     // { id, lat, lng }
 let originalCoords = null;    // { lat, lng }
+let infoMoreActions = false;  // panel colapsable de acciones extra
 
 // CSRF global (para todos los fetch)
 const csrfToken = "<?= h($this->request->getAttribute('csrfToken') ?? '') ?>";
@@ -614,6 +615,9 @@ function renderInfo(f) {
   const statusColor = getStatusColor(estatus);
 
   const canSave = !!pendingCoords && String(pendingCoords.id) === String(id);
+  const inMoveMode = !!originalCoords && f.getProperty('editing') === true;
+  const showMoreActions = !!infoMoreActions;
+  const toggleArrow = showMoreActions ? '▾' : '▸';
 
   return `
     <div style="position:relative; font-size:13px; max-width:260px; padding-right:18px;">
@@ -644,40 +648,52 @@ function renderInfo(f) {
       <div><b>Competencia:</b> ${competencia}</div>
       <div><b>Presupuesto:</b> ${presupuesto}</div>
 
-      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+      <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
         <button type="button"
-          onclick="window._openScheduleModal()"
-          style="background:#fd7e14;color:#fff;border:0;border-radius:8px;padding:6px 10px;cursor:pointer;">
-          Agendar visita
+          onclick="window._openEditModal()"
+          style="background:transparent;color:#8b1d2c;border:0;padding:0;cursor:pointer;font-weight:600;">
+          Editar escuela
         </button>
 
         <button type="button"
           onclick="window._movePinActive()"
-          style="background:#8b1d2c;color:#fff;border:0;border-radius:8px;padding:6px 10px;cursor:pointer;">
+          style="background:transparent;color:#8b1d2c;border:0;padding:0;cursor:pointer;font-weight:600;">
           Mover pin
         </button>
 
         <button type="button"
-          onclick="window._openEditModal()"
-          style="background:#0d6efd;color:#fff;border:0;border-radius:8px;padding:6px 10px;cursor:pointer;">
-          Editar escuela
+          onclick="window._toggleMoreActions()"
+          title="Mas acciones"
+          style="background:transparent;color:#8b1d2c;border:0;padding:0 2px;cursor:pointer;font-size:14px;font-weight:700;">
+          ${toggleArrow}
         </button>
-<button type="button"
-  onclick="window._openMaterials()"
-  style="background:#8b1d2c;color:#fff;border:0;border-radius:8px;padding:6px 10px;cursor:pointer;">
-  Gestor de materiales
-</button>
+      </div>
 
+      <div style="margin-top:6px; display:${showMoreActions ? 'flex' : 'none'}; gap:10px; flex-wrap:wrap; align-items:center;">
+        <button type="button"
+          onclick="window._openScheduleModal()"
+          style="background:transparent;color:#8b1d2c;border:0;padding:0;cursor:pointer;font-weight:600;">
+          Agendar visita
+        </button>
+
+        <button type="button"
+          onclick="window._openMaterials()"
+          style="background:transparent;color:#8b1d2c;border:0;padding:0;cursor:pointer;font-weight:600;">
+          Gestor de materiales
+        </button>
+      </div>
+
+      <div style="margin-top:6px; display:${inMoveMode ? 'flex' : 'none'}; gap:10px; flex-wrap:wrap; align-items:center;">
         <button type="button"
           onclick="window._savePinActive()"
           ${canSave ? '' : 'disabled'}
-          style="background:#198754;color:#fff;border:0;border-radius:8px;padding:6px 10px;cursor:pointer; opacity:${canSave ? '1' : '.5'};">
-          Guardar ubicación
+          style="background:transparent;color:#8b1d2c;border:0;padding:0;cursor:${canSave ? 'pointer' : 'default'};font-weight:700;opacity:${canSave ? '1' : '.5'};">
+          Guardar ubicacion
         </button>
 
         <button type="button"
           onclick="window._cancelMovePin()"
-          style="background:#6c757d;color:#fff;border:0;border-radius:8px;padding:6px 10px;cursor:pointer;">
+          style="background:transparent;color:#8b1d2c;border:0;padding:0;cursor:pointer;font-weight:600;">
           Cancelar
         </button>
       </div>
@@ -715,6 +731,14 @@ window._openScheduleModal = function () {
     document.body.style.overflow = 'hidden';
   }
 };
+window._toggleMoreActions = function () {
+  infoMoreActions = !infoMoreActions;
+  if (!activeFeature) return;
+  const pos = activeFeature.getGeometry().get();
+  infoWindow.setContent(renderInfo(activeFeature));
+  infoWindow.setPosition(pos);
+  infoWindow.open(map);
+};
 function activarEscuela(feature) {
   if (!feature) return;
 
@@ -729,6 +753,7 @@ function activarEscuela(feature) {
   }
 
   activeFeature = feature;
+  infoMoreActions = false;
   feature.setProperty('active', true);
 
   const pos = feature.getGeometry().get();
@@ -838,6 +863,7 @@ window._savePinActive = async function () {
   // fin edición
   pendingCoords = null;
   originalCoords = null;
+  infoMoreActions = false;
   activeFeature.setProperty('editing', false);
   removeEditMarker();
 

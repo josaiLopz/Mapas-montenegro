@@ -35,47 +35,86 @@ class ChatbotController extends AppController
 
             $session = $this->request->getSession();
 
-            // Historial: preferimos el de sesión (para continuidad real)
-// history que llega del front
-$reqHistory = $data['history'] ?? [];
-if (!is_array($reqHistory)) $reqHistory = [];
-$reqHistory = $this->sanitizeHistory($reqHistory);
+            // =========================
+            // Historial: fusiona sesión + lo que llega del front
+            // =========================
+            $reqHistory = $data['history'] ?? [];
+            if (!is_array($reqHistory)) $reqHistory = [];
+            $reqHistory = $this->sanitizeHistory($reqHistory);
 
-// history en sesión (memoria real)
-$sessHistory = $session->read(self::SESSION_KEY_HISTORY) ?: [];
-if (!is_array($sessHistory)) $sessHistory = [];
-$sessHistory = $this->sanitizeHistory($sessHistory);
+            $sessHistory = $session->read(self::SESSION_KEY_HISTORY) ?: [];
+            if (!is_array($sessHistory)) $sessHistory = [];
+            $sessHistory = $this->sanitizeHistory($sessHistory);
 
-// fusiona y recorta
-$history = array_merge($sessHistory, $reqHistory);
-$history = $this->sanitizeHistory($history);
-$history = array_slice($history, -self::HISTORY_LIMIT);
+            $history = array_merge($sessHistory, $reqHistory);
+            $history = $this->sanitizeHistory($history);
+            $history = array_slice($history, -self::HISTORY_LIMIT);
 
+            // =========================
             // Flow state
+            // =========================
             $flow = $session->read(self::SESSION_KEY_FLOW) ?: $this->defaultFlow();
-            if (!empty($history)) {
-                $flow['greeted'] = true;
-            }
-            // 0) Small talk: respuesta humana SIN "Siguiente paso:" y SIN meter pantallas
+            if (!empty($history)) $flow['greeted'] = true;
+
+            // =========================
+            // 0) SMALL TALK: NO usar LLM
+            // =========================
             if ($this->isSmallTalk($question)) {
-                $answer = $this->ollamaReplyFromPlan(
-                    $question,
-                    $context,
-                    $history,
-                    $flow,
-                    "Responder small talk (humano, breve). Luego invitar a continuar con ayuda del sistema con UNA sola pregunta de opciones.",
-                    ['tone' => 'conversacional', 'must_ask' => '(ninguna)'],
-                    []
-                );
+                $answer = $this->smallTalkReply($question);
 
                 $this->appendHistory($session, $history, $question, $answer);
                 return $this->jsonResponse($answer, false, $this->chipsMainModules());
             }
 
-            // 1) Interpretar intent
+            // =========================
+            // 0.5) PETICIONES DE EXPLICACIÓN/RESUMEN: MODO DOC (NO UI)
+            // =========================
+            if ($this->isExplainRequest($question)) {
+                // Interpreta intent por si quieres personalizar chips, pero no forces UI
+                $intent = $this->interpretUserIntent($question, $context);
+
+                $flow = $this->mergeFlow($flow, $intent);
+                $session->write(self::SESSION_KEY_FLOW, $flow);
+
+                $kbRows = $this->retrieveKbSafe($question, $context, 10);
+
+                $plan = "Explica el sistema en forma de resumen práctico y detallado: "
+                    . "módulos principales (Usuarios, Escuelas, Roles, Permisos, About Us), "
+                    . "qué se puede hacer en cada uno, y 5 tips de uso/seguridad. "
+                    . "NO menciones 'Siguiente paso:' ni pidas botones. "
+                    . "Cierra con UNA sola pregunta: ¿Qué módulo quieres revisar primero?";
+
+                $chips = $this->chipsMainModules();
+
+                $answer = $this->ollamaReplyFromPlan(
+                    $question,
+                    $context,
+                    $history,
+                    $flow,
+                    $plan,
+                    ['tone' => 'conversacional', 'must_ask' => '(ninguna)'],
+                    $kbRows
+                );
+
+                $answer = $this->postSanitizeAnswer(trim($answer));
+                $answer = $this->stripBlandOpeners($answer);
+                if (!empty($flow['greeted'])) {
+                    $answer = preg_replace('/^hola[^\n]*\n?/iu', '', $answer);
+                    $answer = preg_replace('/^soy el asistente[^\n]*\n?/iu', '', $answer);
+                    $answer = trim($answer);
+                }
+                $this->appendHistory($session, $history, $question, $answer);
+                return $this->jsonResponse($answer, false, $chips);
+            }
+
+            // =========================
+            // 1) Interpretar intent (normal)
+            // =========================
             $intent = $this->interpretUserIntent($question, $context);
 
-            // 2) Si estamos esperando confirmación para cambiar de tema
+            // =========================
+            // 2) Confirmación si hay pending_switch
+            // =========================
             if (!empty($flow['pending_switch'])) {
                 $yn = $this->yesNo($question);
 
@@ -98,12 +137,17 @@ $history = array_slice($history, -self::HISTORY_LIMIT);
                     );
 
                     $session->write(self::SESSION_KEY_FLOW, $flow);
+                    $answer = $this->postSanitizeAnswer(trim($answer));
+                    $answer = $this->stripBlandOpeners($answer);
+
                     $this->appendHistory($session, $history, $question, $answer);
                     return $this->jsonResponse($answer, false, $chips);
                 }
             }
 
+            // =========================
             // 3) Detectar salto de tema (confirmación)
+            // =========================
             $switch = $this->detectSwitchOfFlow($flow, $intent);
             if ($switch['shouldConfirm'] === true) {
                 $flow['pending_switch'] = [
@@ -125,22 +169,33 @@ $history = array_slice($history, -self::HISTORY_LIMIT);
                     []
                 );
 
+                $answer = $this->postSanitizeAnswer(trim($answer));
+                $answer = $this->stripBlandOpeners($answer);
+
                 $this->appendHistory($session, $history, $question, $answer);
                 return $this->jsonResponse($answer, false, $chips);
             }
 
-            // 4) Actualizar flow con intent (arreglado)
+            // =========================
+            // 4) Actualizar flow con intent
+            // =========================
             $flow = $this->mergeFlow($flow, $intent);
             $session->write(self::SESSION_KEY_FLOW, $flow);
 
+            // =========================
             // 5) KB (opcional)
+            // =========================
             $kbRows = $this->retrieveKbSafe($question, $context, 10);
 
+            // =========================
             // 6) Plan y chips
+            // =========================
             $plan = $this->makePlanFromFlow($question, $context, $flow);
             $chips = $this->chipsForFlow($flow);
 
-            // 7) Ollama SIEMPRE
+            // =========================
+            // 7) Ollama SIEMPRE (modo normal)
+            // =========================
             $answer = $this->ollamaReplyFromPlan(
                 $question,
                 $context,
@@ -151,11 +206,14 @@ $history = array_slice($history, -self::HISTORY_LIMIT);
                 $kbRows
             );
 
-            // 8) Guardrails + “Siguiente paso:” solo si aplica (no lo forces siempre)
+            // =========================
+            // 8) Guardrails + NO forzar “Siguiente paso” salvo que el usuario pida guía paso a paso
+            // =========================
             $answer = $this->postSanitizeAnswer(trim($answer));
+            $answer = $this->stripBlandOpeners($answer);
 
-            // Si el plan es de UI/flujo, sí forzamos “Siguiente paso:”
-            if (!$this->isSmallTalk($question) && $this->planLooksLikeFlow($plan)) {
+            // Solo agregamos "Siguiente paso" si el usuario realmente pide guía paso a paso
+            if (!$this->isSmallTalk($question) && $this->userWantsStepByStep($question)) {
                 if (!preg_match('/\bSiguiente paso:/i', $answer)) {
                     $answer .= "\n\nSiguiente paso: dime qué botón estás usando o qué opción quieres elegir.";
                 }
@@ -216,7 +274,6 @@ $history = array_slice($history, -self::HISTORY_LIMIT);
             'entities' => [],
             'pending_switch' => null,
             'greeted' => false,
-
         ];
     }
 
@@ -341,17 +398,19 @@ $history = array_slice($history, -self::HISTORY_LIMIT);
     {
         $u = mb_strtolower(trim($url));
 
-        if (str_contains($t, 'usuario') || str_contains($t, 'usuarios') || str_contains($t, 'users')) return 'users';
-        if (str_contains($t, 'escuela') || str_contains($t, 'escuelas') || str_contains($t, 'schools')) return 'schools';
-        if (str_contains($t, 'rol') || str_contains($t, 'roles') || str_contains($t, 'permiso') || str_contains($t, 'permisos')) return 'seguridad';
-        if (str_contains($t, 'about') || str_contains($t, 'acerca')) return 'about_us';
-
+        // Prioriza URL si existe
         if ($u !== '') {
             if (str_starts_with($u, '/users')) return 'users';
             if (str_starts_with($u, '/schools')) return 'schools';
             if (str_starts_with($u, '/roles') || str_starts_with($u, '/permissions')) return 'seguridad';
             if (str_starts_with($u, '/about-us')) return 'about_us';
         }
+
+        // Fallback por texto
+        if (str_contains($t, 'usuario') || str_contains($t, 'usuarios') || str_contains($t, 'users')) return 'users';
+        if (str_contains($t, 'escuela') || str_contains($t, 'escuelas') || str_contains($t, 'schools')) return 'schools';
+        if (str_contains($t, 'rol') || str_contains($t, 'roles') || str_contains($t, 'permiso') || str_contains($t, 'permisos')) return 'seguridad';
+        if (str_contains($t, 'about') || str_contains($t, 'acerca')) return 'about_us';
 
         return 'general';
     }
@@ -437,41 +496,44 @@ $history = array_slice($history, -self::HISTORY_LIMIT);
         $entities = $flow['entities'] ?? [];
 
         if ($module === 'users' && $task === '') {
-            return "El usuario está en el tema Usuarios. Debes ofrecer opciones (buscar, crear, editar, eliminar, ver). Cierra con una sola pregunta: ¿qué quieres hacer en Usuarios?";
+            return "El usuario está en el tema Usuarios. Ofrece opciones (buscar, crear, editar, eliminar, ver). "
+                . "Cierra con una sola pregunta: ¿qué quieres hacer en Usuarios?";
         }
         if ($module === 'users' && $task === 'delete_user') {
             $id = $entities['id'] ?? null;
             $name = $entities['user_name'] ?? null;
-            return "Tema: Usuarios / Eliminar. Guiar paso a paso en UI, confirmar (ID/nombre) si falta. Cierra preguntando si ya lo ve en tabla o necesita encontrarlo primero.";
+            return "Tema: Usuarios / Eliminar. Guía paso a paso en UI, confirma (ID/nombre) si falta. "
+                . "Cierra preguntando si ya lo ve en tabla o necesita encontrarlo primero.";
         }
         if ($module === 'users' && $task === 'search_user') {
-            return "Tema: Usuarios / Buscar. Explicar filtros y botón Buscar. Cierra preguntando si lo busca por email o nombre.";
+            return "Tema: Usuarios / Buscar. Explica filtros y botón Buscar. "
+                . "Cierra preguntando si lo busca por email o nombre.";
         }
 
         if ($module === 'schools' && $task === '') {
-            return "Tema: Escuelas. Ofrece opciones (mis filtros, asignar, transferir, editar, visitas). Cierra con una sola pregunta.";
+            return "Tema: Escuelas. Ofrece opciones (mis filtros, asignar, transferir, editar, visitas). "
+                . "Cierra con una sola pregunta.";
         }
         if ($module === 'schools' && $task === 'filter_schools') {
-            return "Tema: Escuelas / Mis filtros. Explica qué se puede filtrar y cómo aplicar. Cierra preguntando qué criterio quiere usar primero.";
+            return "Tema: Escuelas / Mis filtros. Explica qué se puede filtrar y cómo aplicar. "
+                . "Cierra preguntando qué criterio quiere usar primero.";
         }
         if ($module === 'schools' && $task === 'visits') {
-            return "Tema: Escuelas / Visitas. Explica agendar/completar visita y dónde se ve estado. Cierra preguntando si quiere agendar o completar.";
+            return "Tema: Escuelas / Visitas. Explica agendar/completar visita y dónde se ve estado. "
+                . "Cierra preguntando si quiere agendar o completar.";
         }
 
         if ($module === 'seguridad' && $task === '') {
-            return "Tema: Roles/Permisos. Ofrece opciones (roles, permisos, dar acceso). Cierra con una pregunta.";
+            return "Tema: Roles/Permisos. Ofrece opciones (roles, permisos, dar acceso). "
+                . "Cierra con una pregunta.";
         }
         if ($module === 'about_us' && $task === '') {
-            return "Tema: About Us. Ofrece opciones (crear, editar, activar, vista pública). Cierra con una pregunta.";
+            return "Tema: About Us. Ofrece opciones (crear, editar, activar, vista pública). "
+                . "Cierra con una pregunta.";
         }
 
-        return "Ayuda al usuario con su objetivo. Si falta info, pide SOLO 1 dato. Si estás guiando UI, termina con Siguiente paso: ...";
-    }
-
-    private function planLooksLikeFlow(string $plan): bool
-    {
-        $p = mb_strtolower($plan);
-        return str_contains($p, 'paso') || str_contains($p, 'guiar') || str_contains($p, 'ui') || str_contains($p, 'boton') || str_contains($p, 'filtro');
+        return "Ayuda al usuario con su objetivo. Si falta info, pide SOLO 1 dato. "
+            . "Si estás guiando UI, termina con una indicación concreta del siguiente clic (sin repetir muletillas).";
     }
 
     // =========================
@@ -571,85 +633,81 @@ $history = array_slice($history, -self::HISTORY_LIMIT);
         $page = (string)($context['page'] ?? '');
         $url  = (string)($context['url'] ?? '');
         $greeted = !empty($flow['greeted']) ? 'sí' : 'no';
-
+    
         $module = (string)($flow['module'] ?? '');
         $task   = (string)($flow['task'] ?? '');
         $entities = $flow['entities'] ?? [];
         if (!is_array($entities)) $entities = [];
-
+    
         $histText = $this->historyToText($history, 12);
-
+    
         $kbText = '';
         foreach ($kbRows as $r) {
             $txt = trim((string)($r['text'] ?? ''));
             if ($txt !== '') $kbText .= "- {$txt}\n";
         }
-
+    
         $entitiesText = '';
         foreach ($entities as $k => $v) {
             $k = trim((string)$k);
             $v = is_scalar($v) ? (string)$v : json_encode($v, JSON_UNESCAPED_UNICODE);
             if ($k !== '' && trim((string)$v) !== '') $entitiesText .= "- {$k}: {$v}\n";
         }
-
+    
         $mustAsk = trim((string)($options['must_ask'] ?? ''));
         if ($mustAsk === '') $mustAsk = '(ninguna)';
-
+    
         $tone = (string)($options['tone'] ?? 'conversacional');
-
+    
         return <<<PROMPT
-Eres un asistente de ayuda INTERNO del sistema web "Mapa Distribuidores Montenegro".
-Respondes SIEMPRE en español con tono {$tone}, como una persona de soporte amable y directa.
-
-OBJETIVO
-- Mantener una conversación natural y continua (sin reiniciar el chat).
-- Guiar al usuario dentro del sistema con pasos concretos.
-
-REGLAS
-- No afirmes que haces clic, navegas o eliminas/editar por el usuario.
-- Si el usuario pide eliminar/editar, guía por UI y confirma ID/nombre antes del botón final.
-- No repitas "Entiendo/Perfecto/Estamos en la pantalla..." cada turno.
-- Máximo 1 pregunta por respuesta.
-
-SMALL TALK
-- Si el usuario dice "hola / ¿cómo estás? / gracias", responde humano y breve.
-- En small talk NO menciones pantalla/URL y NO uses "Siguiente paso:".
-
-CAMBIO DE TEMA
-- Solo si es cambio claro, pregunta UNA sola vez:
-"¿Quieres dejar a un lado este tema? (sí/no)" y espera.
-
-CONTEXTO (úsalo internamente, no lo repitas literal)
-Pantalla: {$page}
-URL: {$url}
-Flujo: {$module} / {$task}
-Entidades:
-{$entitiesText}
-
-CONVERSACIÓN RECIENTE
-{$histText}
-
-KB (si existe)
-{$kbText}
-
-PLAN
-{$plan}
-
-MENSAJE DEL USUARIO
-{$question}
-
-PREGUNTA OBLIGATORIA (si no es "(ninguna)", úsala EXACTAMENTE y solo esa)
-{$mustAsk}
-PROMPT;
+    Eres un asistente de ayuda INTERNO del sistema web "Mapa Distribuidores Montenegro".
+    Respondes SIEMPRE en español con tono {$tone}, como soporte profesional y directo.
+    
+    Estado de saludo previo: {$greeted}
+    
+    REGLAS CRÍTICAS
+    - Si Estado de saludo previo = "sí", NO vuelvas a saludar.
+    - Si Estado de saludo previo = "sí", NO te presentes.
+    - NO uses frases como:
+      "Hola. Soy el asistente..."
+      "Entiendo que estás en..."
+      "¡Hola! Entiendo que..."
+    - Ve directo a la respuesta.
+    - No afirmes que ejecutas acciones por el usuario.
+    - Máximo 1 pregunta por respuesta.
+    - Si el usuario no pidió paso a paso, no menciones botones.
+    
+    CONTEXTO (no repetir literal)
+    Pantalla: {$page}
+    URL: {$url}
+    Flujo: {$module} / {$task}
+    Entidades:
+    {$entitiesText}
+    
+    CONVERSACIÓN RECIENTE
+    {$histText}
+    
+    KB
+    {$kbText}
+    
+    PLAN
+    {$plan}
+    
+    MENSAJE DEL USUARIO
+    {$question}
+    
+    PREGUNTA OBLIGATORIA
+    {$mustAsk}
+    PROMPT;
     }
+    
 
     private function ollamaGenerateSafe(string $prompt, string $model): string
     {
         try {
             return $this->ollamaGenerate($prompt, $model);
         } catch (\Throwable $e) {
-            // fallback mínimo
-            return "Va 🙂 ¿Qué quieres hacer exactamente (buscar, editar, eliminar, asignar, transferir)?";
+            return "Va 🙂 ¿Qué necesitas hacer (buscar, crear, editar, eliminar, asignar, transferir)?";
         }
     }
 
@@ -736,7 +794,7 @@ PROMPT;
     }
 
     // =========================
-    // Small talk
+    // Small talk + Explain mode + Step-by-step detection
     // =========================
     private function isSmallTalk(string $q): bool
     {
@@ -746,16 +804,61 @@ PROMPT;
         $patterns = [
             'hola','buenas','buenos dias','buenas tardes','buenas noches',
             'como estas','como andas','que tal','todo bien','que onda',
-            'gracias','muchas gracias'
+            'gracias','muchas gracias','solo pasaba a saludar','pasaba a saludar'
         ];
 
         foreach ($patterns as $p) {
             if ($t === $p || str_contains($t, $p)) return true;
         }
 
-        // si el usuario solo manda "ok" o "vale" lo tratamos como pequeño
         if (in_array($t, ['ok','vale','va','dale'], true)) return true;
 
+        return false;
+    }
+
+    private function smallTalkReply(string $q): string
+    {
+        $t = $this->norm($q);
+
+        if (str_contains($t, 'como estas') || str_contains($t, 'que tal') || str_contains($t, 'todo bien')) {
+            return "¡Bien! 🙂 ¿Tú qué tal? Si quieres, dime en qué parte del sistema andas (Usuarios, Escuelas, Roles/Permisos o About Us) y te guío.";
+        }
+
+        if (str_contains($t, 'gracias')) {
+            return "¡De nada! 🙌 ¿Te ayudo con algo del sistema?";
+        }
+
+        if (str_contains($t, 'saludar') || str_contains($t, 'hola') || str_contains($t, 'buenas')) {
+            return "¡Hola! 👋 ¿Qué necesitas hacer dentro del sistema?";
+        }
+
+        return "Va 🙂 ¿Qué necesitas hacer en el sistema?";
+    }
+
+    private function isExplainRequest(string $q): bool
+    {
+        $t = $this->norm($q);
+        $keys = [
+            'resumen','que es','que hace','antes de usar','como funciona','explicame',
+            'explica','que debo saber','manual','guia general','general'
+        ];
+        foreach ($keys as $k) {
+            if (str_contains($t, $k)) return true;
+        }
+        return false;
+    }
+
+    private function userWantsStepByStep(string $q): bool
+    {
+        $t = $this->norm($q);
+        $keys = [
+            'como','donde','boton','clic','click','paso','paso a paso','no encuentro',
+            'no veo','me aparece','error','pantalla','filtro','filtrar'
+        ];
+
+        foreach ($keys as $k) {
+            if (str_contains($t, $k)) return true;
+        }
         return false;
     }
 
@@ -778,6 +881,25 @@ PROMPT;
 
         return $text;
     }
+
+    private function stripBlandOpeners(string $text): string
+    {
+        $patterns = [
+            '/^hola[^\n]*\n?/iu',
+            '/^¡hola![^\n]*\n?/iu',
+            '/^hola\. soy el asistente[^\n]*\n?/iu',
+            '/^soy el asistente[^\n]*\n?/iu',
+            '/^entiendo que[^\n]*\n?/iu',
+            '/^¡hola! entiendo que[^\n]*\n?/iu',
+        ];
+    
+        foreach ($patterns as $p) {
+            $text = preg_replace($p, '', trim($text));
+        }
+    
+        return trim($text);
+    }
+    
 
     private function shouldEscalate(string $answer): bool
     {

@@ -318,6 +318,13 @@ body {
   background:#fafafa;
 }
 
+#chatbot-head-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+#chatbot-minimize,
 #chatbot-close{
   border:0;
   background:#eee;
@@ -713,7 +720,10 @@ body.clean-view .page-card {
           <strong>Ayuda</strong>
           <div style="font-size:12px; opacity:.75;">Asistente del sistema</div>
         </div>
-        <button type="button" id="chatbot-close" aria-label="Cerrar">✕</button>
+        <div id="chatbot-head-actions">
+          <button type="button" id="chatbot-minimize" aria-label="Minimizar">_</button>
+          <button type="button" id="chatbot-close" aria-label="Cerrar">X</button>
+        </div>
       </div>
     
       <div id="chatbot-messages"></div>
@@ -779,10 +789,12 @@ document.addEventListener('DOMContentLoaded', () => {
     (function(){
         const askUrl = "<?= $this->Url->build('/chatbot/ask', ['escape' => false]) ?>";
         const csrfToken = "<?= h($this->request->getAttribute('csrfToken') ?? '') ?>";
+        const storageKey = "chatbot.state.<?= h((string)($user->id ?? $user->email ?? 'user')) ?>";
       
         const fab = document.getElementById('chatbot-fab');
         const panel = document.getElementById('chatbot-panel');
         const closeBtn = document.getElementById('chatbot-close');
+        const minimizeBtn = document.getElementById('chatbot-minimize');
         const msgs = document.getElementById('chatbot-messages');
         const input = document.getElementById('chatbot-input');
         const send = document.getElementById('chatbot-send');
@@ -793,11 +805,46 @@ document.addEventListener('DOMContentLoaded', () => {
       
         if (!fab || !panel || !msgs || !input || !send) return;
       
-        // ====== Historial local (para UI) ======
+        // ====== Estado local persistente ======
         const history = []; // {role:'user'|'assistant', content:'...'}
+        const messageLog = []; // {role:'user'|'bot', text:'...'}
+        let lastChips = [];
+        let chatStarted = false;
+        let uiState = 'closed';
+
         function pushHistory(role, content){
           history.push({ role, content });
           if (history.length > 30) history.splice(0, history.length - 30);
+        }
+
+        function saveState(){
+          sessionStorage.setItem(storageKey, JSON.stringify({
+            uiState,
+            chatStarted,
+            history: history.slice(-30),
+            messages: messageLog.slice(-30),
+            chips: lastChips,
+            escalateVisible: Boolean(escalateBox && escalateBox.style.display !== 'none')
+          }));
+        }
+
+        function loadState(){
+          try {
+            const raw = sessionStorage.getItem(storageKey);
+            return raw ? JSON.parse(raw) : null;
+          } catch (_e) {
+            return null;
+          }
+        }
+
+        function clearState(){
+          history.length = 0;
+          messageLog.length = 0;
+          lastChips = [];
+          chatStarted = false;
+          msgs.innerHTML = '';
+          if (escalateBox) escalateBox.style.display = 'none';
+          sessionStorage.removeItem(storageKey);
         }
       
         function getContext(){
@@ -808,18 +855,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       
         function addMsg(role, text){
+          const cleanText = (text || '').trim();
+          if (!cleanText) return;
+
           const row = document.createElement('div');
           row.className = 'chatbot-msg ' + role;
       
           const b = document.createElement('div');
           b.className = 'chatbot-bubble';
-          b.textContent = text;
+          b.textContent = cleanText;
       
           row.appendChild(b);
           msgs.appendChild(row);
           msgs.scrollTop = msgs.scrollHeight;
-      
-          pushHistory(role === 'user' ? 'user' : 'assistant', text);
+
+          messageLog.push({ role, text: cleanText });
+          if (messageLog.length > 30) messageLog.splice(0, messageLog.length - 30);
+
+          pushHistory(role === 'user' ? 'user' : 'assistant', cleanText);
+          saveState();
         }
         const addUser = (t)=>addMsg('user', t);
         const addBot  = (t)=>addMsg('bot', t);
@@ -828,12 +882,24 @@ document.addEventListener('DOMContentLoaded', () => {
         function renderChips(chips){
           // elimina chips anteriores
           msgs.querySelectorAll('.chatbot-chips').forEach(el => el.remove());
-          if (!chips || !chips.length) return;
+          if (!chips || !chips.length) {
+            lastChips = [];
+            saveState();
+            return;
+          }
+
+          lastChips = chips
+            .filter(c => c && typeof c.label === 'string' && typeof c.value === 'string')
+            .slice(0, 10);
+          if (!lastChips.length) {
+            saveState();
+            return;
+          }
       
           const wrap = document.createElement('div');
           wrap.className = 'chatbot-chips';
         
-          chips.forEach(c => {
+          lastChips.forEach(c => {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'chatbot-chip';
@@ -849,21 +915,40 @@ document.addEventListener('DOMContentLoaded', () => {
         
           msgs.appendChild(wrap);
           msgs.scrollTop = msgs.scrollHeight;
+          saveState();
         }
       
+        function setUiState(nextState){
+          uiState = nextState;
+          if (uiState === 'open') {
+            panel.style.display = 'flex';
+            panel.setAttribute('aria-hidden', 'false');
+            fab.style.display = 'none';
+            input.focus();
+          } else {
+            panel.style.display = 'none';
+            panel.setAttribute('aria-hidden', 'true');
+            fab.style.display = '';
+          }
+          saveState();
+        }
+
         function openChat(){
-          panel.style.display = 'flex';
-          panel.setAttribute('aria-hidden', 'false');
-          input.focus();
+          setUiState('open');
       
-          if (!msgs.dataset.started){
-            msgs.dataset.started = '1';
-            addBot("Hola 👋 Soy el asistente del sistema. ¿En qué te ayudo hoy?");
+          if (!chatStarted){
+            chatStarted = true;
+            addBot("Hola. Soy el asistente del sistema. En que te ayudo hoy?");
+            saveState();
           }
         }
         function closeChat(){
-          panel.style.display = 'none';
-          panel.setAttribute('aria-hidden', 'true');
+          clearState();
+          setUiState('closed');
+        }
+
+        function minimizeChat(){
+          setUiState('minimized');
         }
       
         async function askBot(question){
@@ -914,11 +999,13 @@ document.addEventListener('DOMContentLoaded', () => {
               escalateBox.style.display = '';
               if (data.support_url && supportLink) supportLink.href = data.support_url;
             }
+            saveState();
           }catch(e){
             thinkingNode.remove();
             addBot("Tuve un problema para responder. Intenta de nuevo o contacta soporte.");
             renderChips([{label:'Contactar soporte', value:'Necesito soporte'}]);
             if (escalateBox) escalateBox.style.display = '';
+            saveState();
           }
         }
       
@@ -931,8 +1018,74 @@ document.addEventListener('DOMContentLoaded', () => {
           });
           navigator.clipboard?.writeText(lines.join('\n\n'));
         }
+
+        function restoreState(){
+          const saved = loadState();
+          if (!saved) return;
+
+          const savedHistory = Array.isArray(saved.history) ? saved.history : [];
+          const savedMessages = Array.isArray(saved.messages) ? saved.messages : [];
+          const savedChips = Array.isArray(saved.chips) ? saved.chips : [];
+
+          msgs.innerHTML = '';
+          history.length = 0;
+          messageLog.length = 0;
+
+          savedMessages.forEach((m) => {
+            if (!m || (m.role !== 'user' && m.role !== 'bot') || typeof m.text !== 'string') return;
+            const text = m.text.trim();
+            if (!text) return;
+
+            const row = document.createElement('div');
+            row.className = 'chatbot-msg ' + m.role;
+            const b = document.createElement('div');
+            b.className = 'chatbot-bubble';
+            b.textContent = text;
+            row.appendChild(b);
+            msgs.appendChild(row);
+            messageLog.push({ role: m.role, text });
+          });
+
+          if (savedHistory.length) {
+            savedHistory.forEach((m) => {
+              if (!m || (m.role !== 'user' && m.role !== 'assistant') || typeof m.content !== 'string') return;
+              const content = m.content.trim();
+              if (!content) return;
+              history.push({ role: m.role, content });
+            });
+          } else {
+            messageLog.forEach((m) => {
+              history.push({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text });
+            });
+          }
+
+          chatStarted = Boolean(saved.chatStarted || messageLog.length > 0);
+          uiState = saved.uiState === 'open' || saved.uiState === 'minimized' ? saved.uiState : 'closed';
+          renderChips(savedChips);
+          if (escalateBox) escalateBox.style.display = saved.escalateVisible ? '' : 'none';
+          msgs.scrollTop = msgs.scrollHeight;
+          setUiState(uiState);
+        }
+
+        function bindLogoutCleanup(){
+          const clear = () => sessionStorage.removeItem(storageKey);
+
+          document.querySelectorAll('a[href]').forEach((a) => {
+            const href = (a.getAttribute('href') || '').toLowerCase();
+            if (href.includes('/users/logout')) a.addEventListener('click', clear);
+          });
+
+          document.querySelectorAll('form[action]').forEach((f) => {
+            const action = (f.getAttribute('action') || '').toLowerCase();
+            if (action.includes('/users/logout')) f.addEventListener('submit', clear);
+          });
+        }
       
+        restoreState();
+        bindLogoutCleanup();
+
         fab.addEventListener('click', openChat);
+        minimizeBtn?.addEventListener('click', minimizeChat);
         closeBtn?.addEventListener('click', closeChat);
         send.addEventListener('click', onSend);
         input.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') onSend(); });
