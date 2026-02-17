@@ -48,10 +48,9 @@
     height:34px;
     border-radius:10px;
     font-size:16px;
-    z-index:999; /* encima del mapa y controles */
+    z-index:999; 
   }
-  
-  /* deja espacio a los controles de Google (si estorba) */
+
   @media (max-width: 768px){
     .corner-btn.map-corner{
       top:12px;
@@ -153,6 +152,54 @@
     border-radius:8px;
     padding:6px 10px;
     cursor:pointer;
+  }
+  .visits-modal-card{
+    width:min(760px, 92vw);
+    max-height:86vh;
+    overflow:auto;
+  }
+  .visits-inline-note{
+    margin-top:10px;
+    font-size:12px;
+    color:#666;
+    padding:8px 10px;
+    border:1px dashed #e1e1e1;
+    border-radius:8px;
+    background:#fafafa;
+  }
+  .top-nav-links .agenda-nav-btn{
+    appearance:none;
+    -webkit-appearance:none;
+    border:0;
+    margin:0;
+    min-height:0;
+    height:auto;
+    line-height:1.2;
+    text-transform:none;
+    letter-spacing:normal;
+    white-space:nowrap;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(255, 255, 255, 0.6);
+    color:#000000;
+    font-weight:600;
+    font-size:1.6rem;
+    padding:26px;
+    cursor:pointer;
+    border-radius:0;
+    box-shadow:none;
+  }
+  .top-nav-links .agenda-nav-btn:hover{
+    background:#aa2334;
+    color:#ffffff;
+  }
+  @media (max-width: 820px){
+    .top-nav-links .agenda-nav-btn{
+      font-size:1.4rem;
+      padding:14px 16px;
+      border-radius:12px;
+    }
   }
 
   /* Responsive: sin mover ni ocultar elementos */
@@ -354,9 +401,7 @@
     </div>
   </div>
 </div>
-
 <?= $this->Form->end() ?>
-
 <div id="map-layout" class="map-layout">
   <div id="map-wrap" style="position:relative;">
     <div id="map" style="height:760px; border:1px solid #e6e6e6; border-radius:12px;"></div>
@@ -373,23 +418,35 @@
       <tbody></tbody>
     </table>
 
-    <div id="visits-panel" class="visits-panel">
-      <div class="visits-toolbar">
-        <strong>Agenda de visitas</strong>
-        <div class="btn-group">
-          <button type="button" id="visits-scope-mine" class="btn btn-light btn-sm">Mis</button>
-          <button type="button" id="visits-scope-all" class="btn btn-light btn-sm">Global</button>
+    <div class="visits-inline-note">La agenda de visitas esta disponible en el boton "Agenda" de la barra superior.</div>
+  </div>
+</div>
+
+<div id="visits-modal" class="modal-backdrop">
+  <div class="modal-card visits-modal-card">
+    <div class="modal-head">
+      <strong>Agenda de visitas</strong>
+      <button type="button" id="visits-modal-close" style="border:0; background:#eee; border-radius:8px; padding:6px 10px; cursor:pointer;">Cerrar</button>
+    </div>
+    <div class="modal-body">
+      <div id="visits-panel" class="visits-panel" style="margin-top:0; border-top:0; padding-top:0;">
+        <div class="visits-toolbar">
+          <strong>Agenda de visitas</strong>
+          <div class="btn-group">
+            <button type="button" id="visits-scope-mine" class="btn btn-light btn-sm">Mis</button>
+            <button type="button" id="visits-scope-all" class="btn btn-light btn-sm">Global</button>
+          </div>
         </div>
-      </div>
-      <div class="visits-toolbar">
-        <div class="btn-group">
-          <button type="button" id="visits-status-scheduled" class="btn btn-light btn-sm">Pendientes</button>
-          <button type="button" id="visits-status-completed" class="btn btn-light btn-sm">Completadas</button>
+        <div class="visits-toolbar">
+          <div class="btn-group">
+            <button type="button" id="visits-status-scheduled" class="btn btn-light btn-sm">Pendientes</button>
+            <button type="button" id="visits-status-completed" class="btn btn-light btn-sm">Completadas</button>
+          </div>
+          <button type="button" id="visits-refresh" class="btn btn-light btn-sm">Actualizar</button>
         </div>
-        <button type="button" id="visits-refresh" class="btn btn-light btn-sm">Actualizar</button>
+        <div id="visit-route-info" class="route-info" style="display:none;"></div>
+        <div id="visits-list" class="visits-list"></div>
       </div>
-      <div id="visit-route-info" class="route-info" style="display:none;"></div>
-      <div id="visits-list" class="visits-list"></div>
     </div>
   </div>
 </div>
@@ -1192,6 +1249,8 @@ document.addEventListener('DOMContentLoaded', function () {
   const completeClose = document.getElementById('complete-modal-close');
   const completeSave = document.getElementById('complete-save');
   const completeCancel = document.getElementById('complete-cancel');
+  const visitsModal = document.getElementById('visits-modal');
+  const visitsModalClose = document.getElementById('visits-modal-close');
   const visitsScopeMine = document.getElementById('visits-scope-mine');
   const visitsScopeAll = document.getElementById('visits-scope-all');
   const visitsStatusScheduled = document.getElementById('visits-status-scheduled');
@@ -1220,6 +1279,41 @@ document.addEventListener('DOMContentLoaded', function () {
     Object.values(panels).forEach(p => p.classList.add('hidden'));
     panels[t.dataset.tab].classList.remove('hidden');
   }));
+
+  const injectVisitsNavButton = () => {
+    const navLinks = document.querySelector('.top-nav-links');
+    if (!navLinks || document.getElementById('agenda-visitas-nav-btn')) return;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = 'agenda-visitas-nav-btn';
+    btn.className = 'agenda-nav-btn';
+    btn.textContent = 'Agenda';
+    btn.addEventListener('click', () => {
+      if (!visitsModal) return;
+      visitsModal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      loadVisits();
+    });
+
+    const schoolsLink = Array.from(navLinks.querySelectorAll('a'))
+      .find((a) => (a.textContent || '').trim().toLowerCase().includes('escuelas'));
+
+    if (schoolsLink && schoolsLink.nextSibling) {
+      navLinks.insertBefore(btn, schoolsLink.nextSibling);
+      return;
+    }
+
+    navLinks.appendChild(btn);
+  };
+
+  const closeVisitsModal = () => {
+    if (!visitsModal) return;
+    visitsModal.style.display = 'none';
+    document.body.style.overflow = '';
+  };
+
+  injectVisitsNavButton();
 
   function resizeMap() {
     if (!map || !google?.maps) return;
@@ -1415,6 +1509,12 @@ document.addEventListener('DOMContentLoaded', function () {
     loadVisits();
   });
   if (visitsRefresh) visitsRefresh.addEventListener('click', loadVisits);
+  if (visitsModalClose) visitsModalClose.addEventListener('click', closeVisitsModal);
+  if (visitsModal) {
+    visitsModal.addEventListener('click', (e) => {
+      if (e.target === visitsModal) closeVisitsModal();
+    });
+  }
 
   if (scheduleSave) scheduleSave.addEventListener('click', () => {
     const dtEl = document.getElementById('schedule-datetime');
