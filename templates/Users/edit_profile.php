@@ -36,6 +36,7 @@
                     <?= $this->Form->control('apellido_paterno', ['label' => 'Apellido paterno']) ?>
                     <?= $this->Form->control('apellido_materno', ['label' => 'Apellido materno']) ?>
                     <?= $this->Form->control('email', ['label' => 'Correo electronico']) ?>
+                    <?= $this->Form->control('usern', ['label' => 'Nombre de usuario']) ?>
                 </div>
             </div>
     

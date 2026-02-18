@@ -62,10 +62,16 @@ class UsersTable extends Table
     public function validationDefault(Validator $validator): Validator
     {
         $validator
+            ->scalar('usern')
+            ->maxLength('usern', 100)
+            ->requirePresence('usern', 'create')
+            ->notEmptyString('usern')
+            ->add('usern', 'unique', ['rule' => 'validateUnique', 'provider' => 'table']);
+
+        $validator
             ->email('email')
             ->requirePresence('email', 'create')
-            ->notEmptyString('email')
-            ->add('email', 'unique', ['rule' => 'validateUnique', 'provider' => 'table']);
+            ->notEmptyString('email');
 
         $validator
             ->scalar('password')
@@ -95,7 +101,7 @@ class UsersTable extends Table
      */
     public function buildRules(RulesChecker $rules): RulesChecker
     {
-        $rules->add($rules->isUnique(['email']), ['errorField' => 'email']);
+        $rules->add($rules->isUnique(['usern']), ['errorField' => 'usern']);
 
         return $rules;
     }

@@ -62,6 +62,9 @@ class UsersController extends AppController
     if (!empty($filters['email'])) {
         $query->where(['Users.email LIKE' => '%' . $filters['email'] . '%']);
     }
+    if (!empty($filters['usern'])) {
+        $query->where(['Users.usern LIKE' => '%' . $filters['usern'] . '%']);
+    }
     if (!empty($filters['role_id'])) {
         $query->where(['Users.role_id' => $filters['role_id']]);
     }
@@ -245,7 +248,7 @@ public function editProfile()
             unset($data[$passwordField]);
         }
 
-        $fields = ['name', 'apellido_paterno', 'apellido_materno', 'email'];
+        $fields = ['name', 'apellido_paterno', 'apellido_materno', 'email', 'usern'];
 
         if ($wantsPasswordChange) {
             if ($currentPassword === '' || !$hasher->check($currentPassword, (string)$user->password)) {

@@ -29,6 +29,10 @@
                 'label' => 'Email',
                 'value' => $this->request->getQuery('email'),
             ]) ?>
+            <?= $this->Form->control('usern', [
+                'label' => 'Nombre de usuario',
+                'value' => $this->request->getQuery('usern'),
+            ]) ?>
 
             <?= $this->Form->control('role_id', [
                 'label' => 'Rol',
@@ -61,6 +65,7 @@
                         <th>ID</th>
                         <th>Nombre completo</th>
                         <th>Email</th>
+                        <th>Usuario</th>
                         <th>Rol</th>
                         <th>Estado</th>
                         <th>Acciones</th>
@@ -73,6 +78,7 @@
                                 <td data-label="ID"><?= (int)$user->id ?></td>
                                 <td data-label="Nombre completo"><?= h(trim((string)$user->name . ' ' . (string)$user->apellido_paterno . ' ' . (string)$user->apellido_materno)) ?></td>
                                 <td data-label="Email"><?= h((string)$user->email) ?></td>
+                                <td data-label="Usuario"><?= h((string)$user->usern) ?></td>
                                 <td data-label="Rol"><?= h((string)($user->role->name ?? 'Sin rol')) ?></td>
                                 <td data-label="Estado">
                                     <span class="status-badge <?= $user->activo ? 'is-active' : 'is-inactive' ?>">
@@ -117,7 +123,7 @@
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="6" class="empty-row">No se encontraron usuarios con los filtros actuales.</td>
+                            <td colspan="7" class="empty-row">No se encontraron usuarios con los filtros actuales.</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>

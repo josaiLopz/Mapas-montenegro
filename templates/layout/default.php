@@ -8,8 +8,69 @@ $profileImage = (!empty($user->avatar))
     : '/img/default-user.png';
 
 $allUsers = $this->get('allUsers') ?? [];
-$roleName = $user && !empty($user->role) ? (string)$user->role->name : '';
-$showSidebar = in_array(strtolower($roleName), ['administrador', 'atencion a cliente'], true);
+/**
+ * ===============================
+ *   SISTEMA DINÁMICO DE PERMISOS
+ * ===============================
+ */
+
+$permissionsMap = [];
+
+if ($user && !empty($user->role->permissions)) {
+    foreach ($user->role->permissions as $perm) {
+        $key = strtolower($perm->controller . '.' . $perm->action);
+        $permissionsMap[$key] = true;
+    }
+}
+
+/**
+ * Helper local para validar permisos
+ */
+$can = function (string $controller, string $action) use ($permissionsMap): bool {
+    $key = strtolower($controller . '.' . $action);
+    return isset($permissionsMap[$key]);
+};
+
+/**
+ * Construcción dinámica del sidebar
+ */
+$sidebarItems = [];
+
+// Administración
+if ($can('Dashboard', 'index')) {
+    $sidebarItems[] = ['Dashboard', ['controller' => 'Dashboard', 'action' => 'index']];
+}
+
+if ($can('Users', 'index')) {
+    $sidebarItems[] = ['Usuarios', ['controller' => 'Users', 'action' => 'index']];
+}
+
+if ($can('Permissions', 'index')) {
+    $sidebarItems[] = ['Permisos', ['controller' => 'Permissions', 'action' => 'index']];
+}
+
+if ($can('Roles', 'index')) {
+    $sidebarItems[] = ['Roles', ['controller' => 'Roles', 'action' => 'index']];
+}
+
+if ($can('Schools', 'index')) {
+    $sidebarItems[] = ['Schools', ['controller' => 'Schools', 'action' => 'index']];
+}
+
+if ($can('Schools', 'transfer')) {
+    $sidebarItems[] = ['Transferir escuela', ['controller' => 'Schools', 'action' => 'transfer']];
+}
+
+if ($can('Schools', 'asignar')) {
+    $sidebarItems[] = ['Asignar escuela', ['controller' => 'Schools', 'action' => 'asignar']];
+}
+
+if ($can('Schools', 'filtros')) {
+    $sidebarItems[] = ['Filtros Admin', ['controller' => 'Schools', 'action' => 'filtros']];
+}
+
+$showSidebar = !empty($sidebarItems);
+
 
 $dias = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
 $meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -657,38 +718,40 @@ body.clean-view .page-card {
 
     <?php if ($identity): ?>
     <div class="app-shell<?= $showSidebar ? '' : ' no-sidebar' ?>">
-        <?php if ($showSidebar): ?>
-        <aside class="sidebar" id="sidebar">
-            <h4>Administración</h4>
-            <div class="nav-links">
-                <?= $this->Html->link('Dashboard', ['controller' => 'Dashboard', 'action' => 'index']) ?>
-                <?= $this->Html->link('Usuarios', ['controller' => 'Users', 'action' => 'index']) ?>
-                <?= $this->Html->link('Permisos', ['controller' => 'Permissions', 'action' => 'index']) ?>
-                <?= $this->Html->link('Roles', ['controller' => 'Roles', 'action' => 'index']) ?>
-                <?= $this->Html->link('Schools', ['controller' => 'Schools', 'action' => 'index']) ?>
-                <?= $this->Html->link('Transferir escuela', ['controller' => 'Schools', 'action' => 'transfer']) ?>
-                <?= $this->Html->link('Asignar escuela', ['controller' => 'Schools', 'action' => 'asignar']) ?>
-                <?= $this->Html->link('Filtros Admin', ['controller' => 'Schools', 'action' => 'filtros']) ?>
-            </div>
-
-            <h4>Mi cuenta</h4>
-            <div class="nav-links">
-                <?= $this->Html->link('Acerca de', ['controller' => 'AboutUs', 'action' => 'index']) ?>
-            </div>
-
-            <div class="user-self">
-                <img src="<?= $profileImage ?>" alt="Avatar">
-                <div>
-                    <strong><?= h($user->email) ?></strong>
-                    <?= $this->Form->postLink(
-                        'Salir',
-                        ['controller' => 'Users', 'action' => 'logout'],
-                        ['confirm' => 'Â¿Cerrar sesiÃ³n?', 'class' => 'button button-outline']
-                    ) ?>
-                </div>
-            </div>
-        </aside>
-        <?php endif; ?>
+      <?php if ($identity && $showSidebar): ?>
+      <aside class="sidebar" id="sidebar">
+      
+          <h4>Administración</h4>
+      
+          <div class="nav-links">
+              <?php foreach ($sidebarItems as $item): ?>
+                  <?= $this->Html->link($item[0], $item[1]) ?>
+              <?php endforeach; ?>
+          </div>
+      
+          <h4>Mi cuenta</h4>
+          <div class="nav-links">
+              <?= $this->Html->link('Acerca de', ['controller' => 'AboutUs', 'action' => 'index']) ?>
+          </div>
+      
+          <div class="user-self">
+              <img src="<?= $profileImage ?>" alt="Avatar">
+              <div>
+                  <strong><?= h($user->email) ?></strong>
+                  <?= $this->Form->postLink(
+                      'Salir',
+                      ['controller' => 'Users', 'action' => 'logout'],
+                      [
+                          'confirm' => '¿Cerrar sesión?',
+                          'class' => 'button button-outline'
+                      ]
+                  ) ?>
+              </div>
+          </div>
+      
+      </aside>
+      <?php endif; ?>
+      
 
         <main class="content1">
             <div class="page-card">

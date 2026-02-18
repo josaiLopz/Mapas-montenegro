@@ -131,6 +131,10 @@ $buildPermissionSummary = static function (string $controller, array $actions) u
                         <dd><?= h($user->email) ?></dd>
                     </div>
                     <div class="info-item">
+                        <dt>Usuario</dt>
+                        <dd><?= h($user->usern) ?></dd>
+                    </div>
+                    <div class="info-item">
                         <dt>Apellido paterno</dt>
                         <dd><?= h($user->apellido_paterno) ?></dd>
                     </div>

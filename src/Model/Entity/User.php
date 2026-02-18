@@ -10,6 +10,7 @@ use Authentication\PasswordHasher\DefaultPasswordHasher;
  * User Entity
  *
  * @property int $id
+ * @property string $usern
  * @property string $email
  * @property string $password
  * @property string $name
@@ -35,6 +36,7 @@ class User extends Entity
     return null;
 }
     protected array $_accessible = [
+        'usern' => true,
         'email' => true,
         'password' => true,
         'name' => true,

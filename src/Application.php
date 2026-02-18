@@ -112,7 +112,7 @@ public function middleware(MiddlewareQueue $middlewareQueue): MiddlewareQueue
 
     $service->loadIdentifier('Authentication.Password', [
         'fields' => [
-            'username' => 'email',
+            'username' => 'usern',
             'password' => 'password',
         ],
         'resolver' => [
@@ -125,7 +125,7 @@ public function middleware(MiddlewareQueue $middlewareQueue): MiddlewareQueue
     $service->loadAuthenticator('Authentication.Session');
     $service->loadAuthenticator('Authentication.Form', [
         'fields' => [
-            'username' => 'email',
+            'username' => 'usern',
             'password' => 'password',
         ],
         'loginUrl' => '/users/login',

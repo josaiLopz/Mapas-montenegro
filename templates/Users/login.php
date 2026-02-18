@@ -38,7 +38,7 @@
         <h2 class="login-title">Iniciar sesión</h2>
 
         <?= $this->Form->create() ?>
-        <?= $this->Form->control('email') ?>
+        <?= $this->Form->control('usern', ['label' => 'Nombre de usuario']) ?>
         <?= $this->Form->control('password', ['type' => 'password']) ?>
         <?= $this->Form->button('Entrar') ?>
         <?= $this->Form->end() ?>

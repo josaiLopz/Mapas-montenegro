@@ -22,6 +22,10 @@
         <td><?= h($user->email) ?></td>
     </tr>
     <tr>
+        <th>Usuario</th>
+        <td><?= h($user->usern) ?></td>
+    </tr>
+    <tr>
         <th>Rol</th>
         <td><?= h($user->role->name ?? 'Sin rol') ?></td>
     </tr>

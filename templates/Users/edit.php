@@ -35,6 +35,10 @@
                 'label' => 'Email',
                 'required' => true,
             ]) ?>
+            <?= $this->Form->control('usern', [
+                'label' => 'Nombre de usuario',
+                'required' => true,
+            ]) ?>
 
             <?= $this->Form->control('role_id', [
                 'label' => 'Rol',

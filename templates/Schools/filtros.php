@@ -23,34 +23,51 @@
   @media(max-width: 1100px){ .col-3,.col-4,.col-6{ grid-column: span 12; } }
 
   .hidden{ display:none; }
-  .corner-btn{
-    position:absolute;
-    top:8px;
-    right:8px;
-    width:28px;
-    height:28px;
-    border-radius:8px;
-    border:1px solid #e6e6e6;
-    background:#f8f9fa;
-    color:#8b1d2c;
-    font-size:14px;
-    line-height:1;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
-    z-index:3;
-  }
-  .corner-btn.map-corner{
-    top:12px;
-    right:12px;
-    width:34px;
-    height:34px;
-    border-radius:10px;
-    font-size:16px;
-    z-index:999; 
-  }
+.corner-btn{
+  position:absolute;
+  top:-35px;
+  right:3px;
 
+  background:transparent !important;
+  border:none !important;
+  padding:0;
+  cursor:pointer;
+
+  appearance:none;
+  -webkit-appearance:none;
+  box-shadow:none;
+  outline:none;
+}
+
+.corner-btn:hover,
+.corner-btn:focus,
+.corner-btn:active{
+  background:transparent !important;
+  box-shadow:none !important;
+  outline:none !important;
+}
+  .corner-btn img{
+    width:16px;
+    height:16px;
+    display:block;
+
+  }
+#map-layout{
+  position:relative;
+}
+.toggle-results-btn{
+  position:absolute;
+  top:12px;
+  right:432px;   /* ancho del panel (420px) + gap */
+  background:transparent;
+  border:none;
+  cursor:pointer;
+  z-index:1000;
+}
+.map-layout.results-collapsed .toggle-results-btn{
+  top:-40px;      /* sube a la franja blanca */
+  right:12px;
+}
   @media (max-width: 768px){
     .corner-btn.map-corner{
       top:12px;
@@ -65,6 +82,24 @@
   }
   .map-layout.results-collapsed{
     grid-template-columns: 1fr;
+  }
+  #results-panel{
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+    overflow:hidden;
+  }
+  #results-panel.hidden{
+    display:none !important;
+  }
+  .results-scroll{
+    flex:1;
+    min-height:0;
+    overflow:auto;
+    padding-right:2px;
+  }
+  .results-scroll #tabla-nombres{
+    margin-bottom:0;
   }
   .visits-panel{
     margin-top:12px;
@@ -221,7 +256,7 @@
 </style>
 
 <div class="wrap">
-  <button type="button" id="toggle-filters" class="corner-btn" title="Colapsar filtros">-</button>
+  <button type="button" id="toggle-filters" class="corner-btn" title="Colapsar filtros"></button>
   <div class="topbar">
     <div class="tabs">
       <div class="tab active" data-tab="ubicacion">Ubicación</div>
@@ -403,20 +438,22 @@
 </div>
 <?= $this->Form->end() ?>
 <div id="map-layout" class="map-layout">
+          <button type="button" id="toggle-results-floating" class="corner-btn map-corner" title="Ocultar resultados"></button>
   <div id="map-wrap" style="position:relative;">
     <div id="map" style="height:760px; border:1px solid #e6e6e6; border-radius:12px;"></div>
   </div>
 
   <div id="results-panel" style="border:1px solid #e6e6e6; border-radius:12px; padding:12px; background:#fff; position:relative;">
-    <button type="button" id="toggle-results-floating" class="corner-btn map-corner" title="Ocultar resultados">-</button>
 
     <h5 style="margin:0 0 10px 0;">Resultados</h5>
-    <table id="tabla-nombres" style="width:100%; border-collapse:collapse;" border="1">
-      <thead>
-        <tr><th>Escuela</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="results-scroll">
+      <table id="tabla-nombres" style="width:100%; border-collapse:collapse;" border="1">
+        <thead>
+          <tr><th>Escuela</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
 
     <div class="visits-inline-note">La agenda de visitas esta disponible en el boton "Agenda" de la barra superior.</div>
   </div>
@@ -1233,6 +1270,7 @@ function drawRoute(origin, destination) {
 // ===== DOM =====
 document.addEventListener('DOMContentLoaded', function () {
   const form = document.getElementById('filtros-form');
+  const mapEl = document.getElementById('map');
   const tablaNombresBody = document.querySelector('#tabla-nombres tbody');
   const modal = document.getElementById('edit-modal');
   const modalClose = document.getElementById('edit-modal-close');
@@ -1256,6 +1294,8 @@ document.addEventListener('DOMContentLoaded', function () {
   const visitsStatusScheduled = document.getElementById('visits-status-scheduled');
   const visitsStatusCompleted = document.getElementById('visits-status-completed');
   const visitsRefresh = document.getElementById('visits-refresh');
+  const expandIconUrl = "<?= $this->Url->build('/img/ins.png', ['escape' => false]) ?>?v=<?= (string)@filemtime(WWW_ROOT . 'img' . DS . 'ins.png') ?>";
+  const collapseIconUrl = "<?= $this->Url->build('/img/desins.png', ['escape' => false]) ?>?v=<?= (string)@filemtime(WWW_ROOT . 'img' . DS . 'desins.png') ?>";
 
 
   const btnBuscar   = document.getElementById('btn-buscar');
@@ -1322,11 +1362,32 @@ document.addEventListener('DOMContentLoaded', function () {
     if (center) map.setCenter(center);
   }
 
+  function syncResultsPanelHeight() {
+    if (!mapEl || !resultsPanel || resultsPanel.classList.contains('hidden')) return;
+    const mapHeight = Math.round(mapEl.getBoundingClientRect().height);
+    if (mapHeight > 0) {
+      resultsPanel.style.height = `${mapHeight}px`;
+    }
+  }
+
+  function setCollapseButtonIcon(button, collapsed, showTitle, hideTitle) {
+    if (!button) return;
+    button.textContent = '';
+    button.title = collapsed ? showTitle : hideTitle;
+
+    const img = document.createElement('img');
+    img.src = collapsed ? expandIconUrl : collapseIconUrl;
+    img.alt = collapsed ? showTitle : hideTitle;
+    img.addEventListener('error', () => {
+      button.textContent = collapsed ? '+' : '-';
+    });
+    button.appendChild(img);
+  }
+
   function setFiltersCollapsed(collapsed) {
     if (!filtersBody || !toggleFiltersBtn) return;
     filtersBody.classList.toggle('hidden', collapsed);
-    toggleFiltersBtn.textContent = collapsed ? '+' : '-';
-    toggleFiltersBtn.title = collapsed ? 'Mostrar filtros' : 'Colapsar filtros';
+    setCollapseButtonIcon(toggleFiltersBtn, collapsed, 'Mostrar filtros', 'Colapsar filtros');
   }
 
   function setResultsCollapsed(collapsed) {
@@ -1335,8 +1396,8 @@ document.addEventListener('DOMContentLoaded', function () {
     resultsPanel.classList.toggle('hidden', collapsed);
     mapLayout.classList.toggle('results-collapsed', collapsed);
   
-    toggleResultsFloatingBtn.textContent = collapsed ? '+' : '-';
-    toggleResultsFloatingBtn.title = collapsed ? 'Mostrar resultados' : 'Ocultar resultados';
+    setCollapseButtonIcon(toggleResultsFloatingBtn, collapsed, 'Mostrar resultados', 'Ocultar resultados');
+    if (!collapsed) syncResultsPanelHeight();
   
     setTimeout(resizeMap, 60);
   }
@@ -1597,11 +1658,15 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  window.addEventListener('resize', syncResultsPanelHeight);
+
   // Inicial
   resetMunicipios();
   actualizarContador();
   setFiltersCollapsed(false);
   setResultsCollapsed(false);
+  syncResultsPanelHeight();
+  setTimeout(syncResultsPanelHeight, 120);
   updateVisitsButtons();
   loadVisits();
 });
