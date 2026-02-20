@@ -116,7 +116,14 @@ class AppController extends Controller
     private function hasImpliedPermission(array $permissionMap, string $controller, string $action, string $roleName): bool
     {
         if ($controller === 'schools') {
-            if ($action === 'territoriosresumen') {
+            $schoolsFilterActions = [
+                'filtros',
+                'misfiltros',
+                'filtrarschools',
+                'contarfiltrado',
+                'territoriosresumen',
+            ];
+            if (in_array($action, $schoolsFilterActions, true)) {
                 return $this->hasDirectPermission($permissionMap, 'schools', 'filtros')
                     || $this->hasDirectPermission($permissionMap, 'schools', 'misfiltros')
                     || $this->hasDirectPermission($permissionMap, 'schools', 'filtrarschools');

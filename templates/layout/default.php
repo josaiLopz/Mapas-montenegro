@@ -38,6 +38,12 @@ $isTicketManagerByRole = str_contains($roleName, 'admin')
     || str_contains($roleName, 'support');
 $canTicketsBase = $isTicketManagerByRole || $can('Tickets', 'manage') || $can('Tickets', 'index');
 $canTicketNotifications = $canTicketsBase || $can('Tickets', 'myNotifications');
+$schoolsTopLink = null;
+if ($can('Schools', 'filtros')) {
+    $schoolsTopLink = ['controller' => 'Schools', 'action' => 'filtros'];
+} elseif ($can('Schools', 'misFiltros')) {
+    $schoolsTopLink = ['controller' => 'Schools', 'action' => 'misFiltros'];
+}
 
 /**
  * ConstrucciÃ³n dinÃ¡mica del sidebar
@@ -73,9 +79,6 @@ if ($can('Schools', 'asignar')) {
     $sidebarItems[] = ['Asignar escuela', ['controller' => 'Schools', 'action' => 'asignar']];
 }
 
-if ($can('Schools', 'filtros')) {
-    $sidebarItems[] = ['Filtros Admin', ['controller' => 'Schools', 'action' => 'filtros']];
-}
 if ($canTicketsBase) {
     $sidebarItems[] = ['Tickets', ['controller' => 'Tickets', 'action' => 'index']];
 }
@@ -867,7 +870,9 @@ body.clean-view .page-card {
 
             <?php if ($identity): ?>
             <div class="top-nav-links">
-                <?= $this->Html->link('Escuelas', ['controller' => 'Schools', 'action' => 'misFiltros']) ?>
+                <?php if ($schoolsTopLink): ?>
+                    <?= $this->Html->link('Escuelas', $schoolsTopLink) ?>
+                <?php endif; ?>
                 <?php if ($canTicketsBase): ?>
                     <?= $this->Html->link('Tickets', ['controller' => 'Tickets', 'action' => 'index']) ?>
                 <?php endif; ?>
