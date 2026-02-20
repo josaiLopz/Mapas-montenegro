@@ -464,7 +464,11 @@ class SchoolsController extends AppController
             $users = $this->Schools->Users->find('list', [
                 'keyField' => 'id',
                 'valueField' => function ($u) {
-                    return $u->name . ' (' . $u->email . ')';
+                    return trim(implode(' ', array_filter([
+                        (string)($u->name ?? ''),
+                        (string)($u->apellido_paterno ?? ''),
+                        (string)($u->apellido_materno ?? ''),
+                    ])));
                 }
             ])->order(['name' => 'ASC'])->toArray();
 
@@ -614,6 +618,21 @@ class SchoolsController extends AppController
             return $query;
         }
 
+    private function buildUserDisplayName($user): string
+    {
+        if (!$user) {
+            return 'Sin asignar';
+        }
+
+        $name = trim(implode(' ', array_filter([
+            (string)($user->name ?? ''),
+            (string)($user->apellido_paterno ?? ''),
+            (string)($user->apellido_materno ?? ''),
+        ])));
+
+        return $name !== '' ? $name : 'Sin asignar';
+    }
+
 
     public function contarFiltrado()
     {
@@ -706,6 +725,89 @@ class SchoolsController extends AppController
             ]));
     }
 
+    public function territoriosResumen()
+    {
+        $this->request->allowMethod(['post']);
+
+        $data = $this->request->getData();
+        $identity = $this->request->getAttribute('identity');
+        $currentUserId = $identity ? (int)$identity->getIdentifier() : null;
+        if (($data['mode'] ?? 'admin') === 'mis') {
+            $data['user_id'] = $currentUserId;
+        }
+
+        $query = $this->Schools->find()
+            ->select([
+                'Schools.id',
+                'Schools.estado_id',
+                'Schools.user_id',
+            ])
+            ->contain([
+                'Estados' => function ($q) {
+                    return $q->select(['Estados.id', 'Estados.nombre']);
+                },
+                'Users' => function ($q) {
+                    return $q->select(['Users.id', 'Users.name', 'Users.apellido_paterno', 'Users.apellido_materno']);
+                },
+            ]);
+
+        $query = $this->aplicarFiltros($query, $data);
+
+        $byState = [];
+        foreach ($query->all() as $school) {
+            $estado = $school->estado ?? null;
+            if (!$estado || empty($estado->nombre)) {
+                continue;
+            }
+
+            $stateKey = (string)$estado->id;
+            if (!isset($byState[$stateKey])) {
+                $byState[$stateKey] = [
+                    'estado_id' => (int)$estado->id,
+                    'estado' => (string)$estado->nombre,
+                    'total_schools' => 0,
+                    'users' => [],
+                ];
+            }
+
+            $byState[$stateKey]['total_schools']++;
+
+            $userId = (int)($school->user_id ?? 0);
+            $userKey = $userId > 0 ? (string)$userId : '0';
+            if (!isset($byState[$stateKey]['users'][$userKey])) {
+                $byState[$stateKey]['users'][$userKey] = [
+                    'user_id' => $userId > 0 ? $userId : null,
+                    'user_name' => $this->buildUserDisplayName($school->user ?? null),
+                    'count' => 0,
+                ];
+            }
+            $byState[$stateKey]['users'][$userKey]['count']++;
+        }
+
+        $states = [];
+        foreach ($byState as $state) {
+            $users = array_values($state['users']);
+            usort($users, function ($a, $b) {
+                return (int)$b['count'] <=> (int)$a['count'];
+            });
+
+            $states[] = [
+                'estado_id' => $state['estado_id'],
+                'estado' => $state['estado'],
+                'total_schools' => $state['total_schools'],
+                'users_count' => count($users),
+                'users' => $users,
+            ];
+        }
+
+        return $this->response
+            ->withType('application/json')
+            ->withStringBody(json_encode([
+                'ok' => true,
+                'states' => $states,
+            ]));
+    }
+
     public function guardarCoordenadas()
         {
             $this->request->allowMethod(['post']);
@@ -788,9 +890,13 @@ class SchoolsController extends AppController
             $currentUserId = (int)$identity->getIdentifier();
 
             // Usuario (solo él)
-            $u = $this->Schools->Users->get($currentUserId, ['fields' => ['id','name','email']]);
+            $u = $this->Schools->Users->get($currentUserId, ['fields' => ['id','name','apellido_paterno','apellido_materno']]);
             $users = [
-                $u->id => $u->name . ' (' . $u->email . ')'
+                $u->id => trim(implode(' ', array_filter([
+                    (string)($u->name ?? ''),
+                    (string)($u->apellido_paterno ?? ''),
+                    (string)($u->apellido_materno ?? ''),
+                ])))
             ];
 
             // Estados donde él tiene escuelas
@@ -831,7 +937,11 @@ class SchoolsController extends AppController
             $users = $this->Schools->Users->find('list', [
                 'keyField' => 'id',
                 'valueField' => function ($u) {
-                    return $u->name . ' (' . $u->email . ')';
+                    return trim(implode(' ', array_filter([
+                        (string)($u->name ?? ''),
+                        (string)($u->apellido_paterno ?? ''),
+                        (string)($u->apellido_materno ?? ''),
+                    ])));
                 }
             ])->order(['name' => 'ASC']);
 

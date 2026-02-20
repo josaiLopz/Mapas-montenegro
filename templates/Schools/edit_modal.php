@@ -277,18 +277,21 @@ $statusOptions = [
 (function(){
   const form = document.getElementById('edit-school-modal-form');
   if (!form) return;
+  let lastHeight = 0;
 
   const fitFrameToContent = () => {
     if (!window.frameElement) return;
-    const doc = document.documentElement;
-    const body = document.body;
-    const height = Math.max(
-      doc.scrollHeight,
-      body ? body.scrollHeight : 0
-    );
-    window.frameElement.style.height = (height + 4) + 'px';
+    const root = document.querySelector('.modal-school-edit') || form;
+    const rect = root.getBoundingClientRect();
+    const styles = window.getComputedStyle(root);
+    const marginTop = parseFloat(styles.marginTop || '0') || 0;
+    const marginBottom = parseFloat(styles.marginBottom || '0') || 0;
+    const height = Math.ceil(rect.height + marginTop + marginBottom + 6);
+    if (Math.abs(lastHeight - height) < 2) return;
+    lastHeight = height;
+    window.frameElement.style.height = `${height}px`;
     if (window.parent && window.parent !== window) {
-      window.parent.postMessage({ type: 'school:modalHeight', height: height + 4 }, window.location.origin);
+      window.parent.postMessage({ type: 'school:modalHeight', height }, window.location.origin);
     }
   };
 
@@ -354,4 +357,3 @@ $statusOptions = [
   });
 })();
 </script>
-

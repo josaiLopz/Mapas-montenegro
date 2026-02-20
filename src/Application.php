@@ -27,6 +27,7 @@ use Cake\Http\MiddlewareQueue;
 use Cake\ORM\Locator\TableLocator;
 use Cake\Routing\Middleware\AssetMiddleware;
 use Cake\Routing\Middleware\RoutingMiddleware;
+use Cake\Routing\Router;
 use Authentication\AuthenticationService;
 use Authentication\AuthenticationServiceInterface;
 use Authentication\AuthenticationServiceProviderInterface;
@@ -106,9 +107,12 @@ public function middleware(MiddlewareQueue $middlewareQueue): MiddlewareQueue
     public function services(ContainerInterface $container): void
     {
     }
-   public function getAuthenticationService(ServerRequestInterface $request): AuthenticationServiceInterface
+ public function getAuthenticationService(ServerRequestInterface $request): AuthenticationServiceInterface
 {
- $service = new AuthenticationService();
+ $service = new AuthenticationService([
+        'unauthenticatedRedirect' => Router::url('/users/login'),
+        'queryParam' => 'redirect',
+    ]);
 
     $service->loadIdentifier('Authentication.Password', [
         'fields' => [

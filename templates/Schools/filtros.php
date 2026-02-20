@@ -253,6 +253,38 @@
     #tabla-nombres{ display:block; overflow-x:auto; }
     #tabla-nombres th, #tabla-nombres td{ white-space:nowrap; }
   }
+  .territories-legend{
+    position:absolute;
+    left:12px;
+    top:12px;
+    z-index:8;
+    background:rgba(255,255,255,.95);
+    border:1px solid #e3e3e3;
+    border-radius:10px;
+    padding:8px 10px;
+    min-width:190px;
+    max-width:260px;
+    box-shadow:0 8px 18px rgba(0,0,0,.12);
+    font-size:12px;
+    display:none;
+  }
+  .territories-legend .legend-title{
+    font-weight:700;
+    margin-bottom:6px;
+  }
+  .territories-legend .legend-item{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin:4px 0;
+  }
+  .territories-legend .swatch{
+    width:10px;
+    height:10px;
+    border-radius:999px;
+    border:1px solid rgba(0,0,0,.2);
+    flex:0 0 auto;
+  }
 </style>
 
 <div class="wrap">
@@ -440,6 +472,7 @@
 <div id="map-layout" class="map-layout">
           <button type="button" id="toggle-results-floating" class="corner-btn map-corner" title="Ocultar resultados"></button>
   <div id="map-wrap" style="position:relative;">
+    <div id="territories-legend" class="territories-legend"></div>
     <div id="map" style="height:760px; border:1px solid #e6e6e6; border-radius:12px;"></div>
   </div>
 
@@ -507,12 +540,8 @@
 </div>
 
 <div id="edit-modal" style="position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:10000;">
-  <div style="background:#fff; width:min(980px, 92vw); height:min(760px, 92vh); max-height:52vh; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.25); overflow:hidden; display:flex; flex-direction:column;">
-    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid #eee;">
-      <strong>Editar escuela</strong>
-      <button type="button" id="edit-modal-close" style="border:0; background:#eee; border-radius:8px; padding:6px 10px; cursor:pointer;">Cerrar</button>
-    </div>
-    <iframe id="edit-modal-iframe" title="Editar escuela" style="width:100%; height:100%; border:0;"></iframe>
+  <div id="edit-modal-card" style="background:#fff; width:min(1320px, 86vw); max-height:92vh; border-radius:6px; box-shadow:0 16px 36px rgba(0,0,0,.28); overflow:hidden; padding:10px 12px; display:flex; flex-direction:column;">
+    <iframe id="edit-modal-iframe" title="Editar escuela" style="width:100%; height:420px; border:0; display:block; background:#fff;"></iframe>
   </div>
 </div>
 
@@ -569,6 +598,12 @@
 <script>
 let map;
 let dataLayer;
+let territoriesLayer = null;
+let territoriesLayerReady = false;
+let territoriesLayerLoadingPromise = null;
+let territoriesStateIndex = new Map();
+let territoriesUserColors = new Map();
+let territoriesInfoWindow = null;
 let activeFeature = null;
 let infoWindow;
 let directionsService;
@@ -594,6 +629,8 @@ const contarUrl   = "<?= $this->Url->build(['controller'=>'Schools','action'=>'c
 const guardarUrl  = "<?= $this->Url->build(['controller'=>'Schools','action'=>'guardarCoordenadas'], ['escape'=>false]) ?>";
 const editUrlTpl  = "<?= $this->Url->build(['controller'=>'Schools','action'=>'editModal','__ID__'], ['escape'=>false]) ?>";
 const municipiosUrlTpl = "<?= $this->Url->build(['controller'=>'Schools','action'=>'municipiosPorEstado','__ID__'], ['escape' => false]) ?>";
+const territoriosResumenUrl = "<?= $this->Url->build(['controller'=>'Schools','action'=>'territoriosResumen'], ['escape'=>false]) ?>";
+const territoriesGeoJsonUrl = "<?= $this->Url->build('/geo/mx_estados.geojson', ['escape'=>false]) ?>";
 const materialsUrlTpl = "<?= $this->Url->build('/schools/__ID__/materials-manager', ['escape'=>false]) ?>";
 const visitsScheduleUrl = "<?= $this->Url->build(['controller'=>'Visits','action'=>'schedule'], ['escape'=>false]) ?>";
 const visitsListUrl = "<?= $this->Url->build(['controller'=>'Visits','action'=>'listVisits'], ['escape'=>false]) ?>";
@@ -605,6 +642,10 @@ let visitsStatus = 'scheduled';
 let scheduleSchoolId = null;
 let scheduleSchoolName = '';
 let completeVisitId = null;
+let editModalResizeTimers = [];
+const territoriesPalette = ['#0d6efd', '#198754', '#fd7e14', '#dc3545', '#20c997', '#6f42c1', '#0dcaf0', '#d63384', '#6610f2', '#795548'];
+const territoriesMixedColor = '#495057';
+const territoriesEmptyColor = '#e9ecef';
 
 // ===== Colores por estatus (GLOBAL) =====
 function getStatusColor(estatus) {
@@ -626,6 +667,219 @@ function getEstatusText(estatus) {
     prohibicion: 'Prohibición',
     ventaMarcas: 'Venta otras marcas'
   })[String(estatus)] || (estatus || '—');
+}
+
+function normalizeTerritoryKey(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toUpperCase();
+}
+
+function getTerritoryColorByUser(userId) {
+  const key = String(userId ?? '');
+  if (territoriesUserColors.has(key)) return territoriesUserColors.get(key);
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) {
+    hash = ((hash << 5) - hash) + key.charCodeAt(i);
+    hash |= 0;
+  }
+  const color = territoriesPalette[Math.abs(hash) % territoriesPalette.length];
+  territoriesUserColors.set(key, color);
+  return color;
+}
+
+function getTerritoryStateData(feature) {
+  if (!feature) return null;
+  const directName = feature.getProperty('name') || feature.getProperty('NOMGEO') || '';
+  const key = normalizeTerritoryKey(directName);
+  if (key && territoriesStateIndex.has(key)) return territoriesStateIndex.get(key);
+  return null;
+}
+
+function getTerritoriesFeatureStyle(feature) {
+  const stateData = getTerritoryStateData(feature);
+  if (!stateData) {
+    return {
+      fillColor: territoriesEmptyColor,
+      fillOpacity: 0.08,
+      strokeColor: '#adb5bd',
+      strokeWeight: 1,
+      clickable: true,
+    };
+  }
+
+  const usersCount = Number(stateData.users_count || 0);
+  const users = Array.isArray(stateData.users) ? stateData.users : [];
+  const primaryUser = users[0] || null;
+  const fillColor = getTerritoryColorByUser((primaryUser || {}).user_id ?? 0);
+
+  return {
+    fillColor,
+    fillOpacity: usersCount > 1 ? 0.26 : 0.34,
+    strokeColor: usersCount > 1 ? '#212529' : '#495057',
+    strokeWeight: usersCount > 1 ? 1.8 : 1.2,
+    clickable: true,
+  };
+}
+
+function renderTerritoriesLegend() {
+  const legend = document.getElementById('territories-legend');
+  if (!legend) return;
+  const estadoSel = document.getElementById('estado');
+  const selectedEstadoId = estadoSel ? String(estadoSel.value || '') : '';
+
+  if (selectedEstadoId) {
+    let selectedState = null;
+    territoriesStateIndex.forEach((state) => {
+      if (String(state.estado_id || '') === selectedEstadoId) {
+        selectedState = state;
+      }
+    });
+
+    if (selectedState) {
+      const users = Array.isArray(selectedState.users) ? selectedState.users : [];
+      let html = '<div class="legend-title">Usuarios en estado filtrado</div>';
+      html += `<div class="legend-item"><span><b>${selectedState.estado || 'Estado'}</b></span></div>`;
+      html += `<div class="legend-item"><span>Escuelas: <b>${selectedState.total_schools || 0}</b></span></div>`;
+      users.forEach((u) => {
+        const color = getTerritoryColorByUser(u.user_id ?? 0);
+        const name = String(u.user_name || 'Sin asignar');
+        html += `<div class="legend-item"><span class="swatch" style="background:${color}"></span><span>${name} (${u.count || 0})</span></div>`;
+      });
+      if (!users.length) {
+        html += `<div class="legend-item"><span class="swatch" style="background:${territoriesEmptyColor}"></span><span>Sin datos</span></div>`;
+      }
+      legend.innerHTML = html;
+      legend.style.display = '';
+      return;
+    }
+  }
+
+  const rows = [];
+  territoriesStateIndex.forEach((state) => {
+    (state.users || []).forEach((u) => rows.push(u));
+  });
+
+  const userCountMap = new Map();
+  rows.forEach((u) => {
+    const id = String(u.user_id ?? '0');
+    const prev = userCountMap.get(id);
+    if (!prev || Number(u.count || 0) > Number(prev.count || 0)) {
+      userCountMap.set(id, u);
+    }
+  });
+
+  const users = Array.from(userCountMap.values()).slice(0, 8);
+  let html = '<div class="legend-title">Territorios por usuario</div>';
+  html += `<div class="legend-item"><span style="font-size:11px;color:#555;">Estados con varios usuarios se muestran con borde mas fuerte.</span></div>`;
+  users.forEach((u) => {
+    const color = getTerritoryColorByUser(u.user_id ?? 0);
+    const name = String(u.user_name || 'Sin asignar');
+    html += `<div class="legend-item"><span class="swatch" style="background:${color}"></span><span>${name}</span></div>`;
+  });
+  if (!users.length) {
+    html += `<div class="legend-item"><span class="swatch" style="background:${territoriesEmptyColor}"></span><span>Sin datos</span></div>`;
+  }
+
+  legend.innerHTML = html;
+  legend.style.display = '';
+}
+
+function clearTerritoriesLegend() {
+  const legend = document.getElementById('territories-legend');
+  if (!legend) return;
+  legend.style.display = 'none';
+  legend.innerHTML = '';
+}
+
+function ensureTerritoriesLayer() {
+  if (territoriesLayerReady && territoriesLayer) return Promise.resolve();
+  if (territoriesLayerLoadingPromise) return territoriesLayerLoadingPromise;
+  if (!map || !google?.maps?.Data) return Promise.resolve();
+
+  territoriesLayer = new google.maps.Data();
+  territoriesInfoWindow = new google.maps.InfoWindow();
+  territoriesLayer.setStyle(getTerritoriesFeatureStyle);
+
+  territoriesLayer.addListener('click', (e) => {
+    const stateData = getTerritoryStateData(e.feature);
+    if (!stateData || !territoriesInfoWindow) return;
+    const users = Array.isArray(stateData.users) ? stateData.users : [];
+    const rows = users.map((u) => {
+      const color = getTerritoryColorByUser(u.user_id ?? 0);
+      const name = String(u.user_name || 'Sin asignar');
+      return `<div style="display:flex;align-items:center;gap:6px;margin:3px 0;"><span style="width:10px;height:10px;border-radius:999px;background:${color};display:inline-block;"></span><span>${name} (${u.count || 0})</span></div>`;
+    }).join('');
+
+    territoriesInfoWindow.setContent(`
+      <div style="font-size:12px;max-width:260px;">
+        <div style="font-weight:700;margin-bottom:6px;">${stateData.estado || 'Estado'}</div>
+        <div>Total escuelas: <b>${stateData.total_schools || 0}</b></div>
+        <div style="margin-top:4px;">Usuarios: <b>${stateData.users_count || 0}</b></div>
+        <div style="margin-top:6px;">${rows || '<span>Sin usuarios</span>'}</div>
+      </div>
+    `);
+    territoriesInfoWindow.setPosition(e.latLng);
+    territoriesInfoWindow.open(map);
+  });
+
+  territoriesLayerLoadingPromise = new Promise((resolve) => {
+    territoriesLayer.loadGeoJson(territoriesGeoJsonUrl, null, () => {
+      territoriesLayerReady = true;
+      resolve();
+    });
+  });
+
+  return territoriesLayerLoadingPromise;
+}
+
+function setTerritoriesVisible(visible) {
+  if (!territoriesLayer) return;
+  territoriesLayer.setMap(visible ? map : null);
+  if (!visible) {
+    clearTerritoriesLegend();
+    if (territoriesInfoWindow) territoriesInfoWindow.close();
+  }
+}
+
+function fetchTerritoriesSummary(form) {
+  if (!form) return Promise.resolve([]);
+  const formData = new FormData(form);
+  const headers = { 'Accept': 'application/json' };
+  if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+  return fetch(territoriosResumenUrl, { method: 'POST', headers, body: formData, credentials: 'same-origin' })
+    .then(r => r.json())
+    .then((data) => (data && data.ok && Array.isArray(data.states)) ? data.states : [])
+    .catch((e) => {
+      console.error(e);
+      return [];
+    });
+}
+
+function applyTerritoriesSummary(states) {
+  territoriesStateIndex = new Map();
+  (states || []).forEach((s) => {
+    const key = normalizeTerritoryKey(s.estado || '');
+    if (!key) return;
+    territoriesStateIndex.set(key, s);
+  });
+  if (territoriesLayer) territoriesLayer.setStyle(getTerritoriesFeatureStyle);
+  renderTerritoriesLegend();
+}
+
+function refreshTerritoriesOverlay(form, territoriosChk) {
+  if (!territoriosChk || !territoriosChk.checked) {
+    setTerritoriesVisible(false);
+    return;
+  }
+  ensureTerritoriesLayer()
+    .then(() => fetchTerritoriesSummary(form))
+    .then((states) => {
+      applyTerritoriesSummary(states);
+      setTerritoriesVisible(true);
+    });
 }
 
 function getIcon(active, estatus) {
@@ -991,6 +1245,60 @@ window._cancelMovePin = function () {
 };
 
 // ===== Modal editar =====
+function getEditIframeContentHeight(iframe) {
+  if (!iframe) return null;
+  try {
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc || !doc.body || !doc.documentElement) return null;
+    const root = doc.querySelector('.modal-school-edit') || doc.querySelector('#edit-school-modal-form');
+    if (root) {
+      const rect = root.getBoundingClientRect();
+      const styles = iframe.contentWindow?.getComputedStyle(root);
+      const marginTop = parseFloat(styles?.marginTop || '0') || 0;
+      const marginBottom = parseFloat(styles?.marginBottom || '0') || 0;
+      return Math.ceil(rect.height + marginTop + marginBottom + 8);
+    }
+    return Math.max(
+      doc.body.scrollHeight || 0,
+      doc.body.offsetHeight || 0,
+      doc.documentElement.scrollHeight || 0,
+      doc.documentElement.offsetHeight || 0
+    );
+  } catch (e) {
+    return null;
+  }
+}
+
+function resizeEditModalToContent() {
+  const modal = document.getElementById('edit-modal');
+  const iframe = document.getElementById('edit-modal-iframe');
+  if (!modal || !iframe) return;
+  if (modal.style.display !== 'flex') return;
+
+  const minHeight = 260;
+  const maxHeight = Math.max(minHeight, Math.floor(window.innerHeight * 0.84));
+  const contentHeight = getEditIframeContentHeight(iframe);
+  const targetHeight = contentHeight
+    ? Math.min(Math.max(contentHeight + 8, minHeight), maxHeight)
+    : minHeight;
+
+  const currentHeight = parseInt(iframe.style.height || '0', 10) || 0;
+  if (Math.abs(currentHeight - targetHeight) < 2) return;
+  iframe.style.height = `${targetHeight}px`;
+}
+
+function startEditModalAutoResize() {
+  stopEditModalAutoResize();
+  const passes = [0, 120, 280, 520, 900];
+  editModalResizeTimers = passes.map((ms) => setTimeout(resizeEditModalToContent, ms));
+}
+
+function stopEditModalAutoResize() {
+  if (!editModalResizeTimers.length) return;
+  editModalResizeTimers.forEach((id) => clearTimeout(id));
+  editModalResizeTimers = [];
+}
+
 window._openEditModal = function () {
   if (!activeFeature) return;
   const id = activeFeature.getProperty('id');
@@ -1003,9 +1311,11 @@ window._openEditModal = function () {
   const base = editUrlTpl.replace('__ID__', encodeURIComponent(id));
   const url = base.includes('?') ? `${base}&layout=ajax` : `${base}?layout=ajax`;
 
+  iframe.style.height = '260px';
   iframe.src = url;
   modal.style.display = 'flex';
   document.body.style.overflow = 'hidden';
+  startEditModalAutoResize();
 };
 
 
@@ -1015,8 +1325,10 @@ function closeEditModal() {
   if (!modal || !iframe) return;
 
   iframe.src = 'about:blank';
+  iframe.style.height = '420px';
   modal.style.display = 'none';
   document.body.style.overflow = '';
+  stopEditModalAutoResize();
 }
 
 function openCompleteModal(visitId) {
@@ -1273,7 +1585,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const mapEl = document.getElementById('map');
   const tablaNombresBody = document.querySelector('#tabla-nombres tbody');
   const modal = document.getElementById('edit-modal');
-  const modalClose = document.getElementById('edit-modal-close');
   const filtersBody = document.getElementById('filters-body');
   const toggleFiltersBtn = document.getElementById('toggle-filters');
   const mapLayout = document.getElementById('map-layout');
@@ -1301,6 +1612,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const btnBuscar   = document.getElementById('btn-buscar');
   const btnLimpiar  = document.getElementById('btn-limpiar');
   const contador    = document.getElementById('contador');
+  const territoriosChk = document.getElementById('territorios');
 
   const estadoSel   = document.getElementById('estado');
   const municipioSel= document.getElementById('municipio');
@@ -1460,6 +1772,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (e.target.id !== 'estado' && e.target.id !== 'municipio') {
       actualizarContador();
     }
+    refreshTerritoriesOverlay(form, territoriosChk);
   });
 
   // Buscar (tabla + mapa)
@@ -1522,6 +1835,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         fitToDataLayer();
+        refreshTerritoriesOverlay(form, territoriosChk);
       })
       .catch(console.error);
   });
@@ -1532,13 +1846,23 @@ document.addEventListener('DOMContentLoaded', function () {
     actualizarContador();
     tablaNombresBody.innerHTML = '';
     clearDataLayer();
+    refreshTerritoriesOverlay(form, territoriosChk);
   });
-
-  if (modalClose) modalClose.addEventListener('click', closeEditModal);
 
   if (modal) {
     modal.addEventListener('click', (e) => {
       if (e.target === modal) closeEditModal();
+    });
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal && modal.style.display === 'flex') {
+      closeEditModal();
+    }
+  });
+  const editIframe = document.getElementById('edit-modal-iframe');
+  if (editIframe) {
+    editIframe.addEventListener('load', () => {
+      startEditModalAutoResize();
     });
   }
 
@@ -1658,7 +1982,10 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  window.addEventListener('resize', syncResultsPanelHeight);
+  window.addEventListener('resize', () => {
+    syncResultsPanelHeight();
+    resizeEditModalToContent();
+  });
 
   // Inicial
   resetMunicipios();
@@ -1669,12 +1996,31 @@ document.addEventListener('DOMContentLoaded', function () {
   setTimeout(syncResultsPanelHeight, 120);
   updateVisitsButtons();
   loadVisits();
+  refreshTerritoriesOverlay(form, territoriosChk);
 });
 
 // recibe mensaje del iframe cuando se guarda la escuela
 window.addEventListener('message', (ev) => {
   if (ev.origin !== window.location.origin) return;
-  if (!ev.data || ev.data.type !== 'school:updated') return;
+  if (!ev.data) return;
+
+  if (ev.data.type === 'school:modalHeight') {
+    const iframe = document.getElementById('edit-modal-iframe');
+    const modal = document.getElementById('edit-modal');
+    const reported = Number(ev.data.height || 0);
+    if (iframe && modal && modal.style.display === 'flex' && Number.isFinite(reported) && reported > 0) {
+      const minHeight = 260;
+      const maxHeight = Math.max(minHeight, Math.floor(window.innerHeight * 0.84));
+      const targetHeight = Math.min(Math.max(reported, minHeight), maxHeight);
+      const currentHeight = parseInt(iframe.style.height || '0', 10) || 0;
+      if (Math.abs(currentHeight - targetHeight) >= 2) {
+        iframe.style.height = `${targetHeight}px`;
+      }
+    }
+    return;
+  }
+
+  if (ev.data.type !== 'school:updated') return;
 
   closeEditModal();
   showSavedToast('✔ Escuela actualizada correctamente');

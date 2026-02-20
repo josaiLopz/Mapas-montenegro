@@ -1,120 +1,163 @@
 <?php
 declare(strict_types=1);
 
-/**
- * CakePHP(tm) : Rapid Development Framework (https://cakephp.org)
- * Copyright (c) Cake Software Foundation, Inc. (https://cakefoundation.org)
- *
- * Licensed under The MIT License
- * For full copyright and license information, please see the LICENSE.txt
- * Redistributions of files must retain the above copyright notice.
- *
- * @copyright Copyright (c) Cake Software Foundation, Inc. (https://cakefoundation.org)
- * @link      https://cakephp.org CakePHP(tm) Project
- * @since     0.2.9
- * @license   https://opensource.org/licenses/mit-license.php MIT License
- */
 namespace App\Controller;
 
 use Cake\Controller\Controller;
+use Cake\Event\EventInterface;
 use Cake\Http\Exception\ForbiddenException;
 
-/**
- * Application Controller
- *
- * Add your application-wide methods in the class below, your controllers
- * will inherit them.
- *
- * @link https://book.cakephp.org/5/en/controllers.html#the-app-controller
- */
 class AppController extends Controller
 {
-    /**
-     * Initialization hook method.
-     *
-     * Use this method to add common initialization code like loading components.
-     *
-     * e.g. `$this->loadComponent('FormProtection');`
-     *
-     * @return void
-     */
     public function initialize(): void
     {
         parent::initialize();
-
         $this->loadComponent('Flash');
-
-        /*
-         * Enable the following component for recommended CakePHP form protection settings.
-         * see https://book.cakephp.org/5/en/controllers/components/form-protection.html
-         */
         //$this->loadComponent('FormProtection');
     }
-    // public function isAuthorized($user)
-    // {
-    //     return false;
-    // }
-    public function beforeRender(\Cake\Event\EventInterface $event)
-{
-    parent::beforeRender($event);
 
-    $identity = $this->request->getAttribute('identity');
-    if ($identity) {
-        $this->set('identity', $identity);
+    public function beforeRender(EventInterface $event)
+    {
+        parent::beforeRender($event);
+
+        $identity = $this->request->getAttribute('identity');
+        if ($identity) {
+            $this->set('identity', $identity);
+        }
     }
-}
 
-  public function beforeFilter(\Cake\Event\EventInterface $event)
+    public function beforeFilter(EventInterface $event)
     {
         parent::beforeFilter($event);
 
         $identity = $this->request->getAttribute('identity');
-        $controller = $this->request->getParam('controller');
-        $action = $this->request->getParam('action');
-        
+        $controller = (string)$this->request->getParam('controller');
+        $action = (string)$this->request->getParam('action');
+
         if ($controller === 'Users' && in_array($action, ['login', 'logout'], true)) {
             return;
         }
+
         if (!$identity) {
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
-            $publicForAllRoles = [
-                'AboutUs' => ['publicView'],
-            ];
 
-                if (
-        isset($publicForAllRoles[$controller]) &&
-        in_array($action, $publicForAllRoles[$controller], true)
-    ) {
-        return;
-    }
-        $userId = $identity->get('id'); 
-        // Alternativa si te llegara a fallar:
-        // $userId = $identity->getOriginalData()->id;
+        $publicForAllRoles = [
+            'AboutUs' => ['publicView'],
+        ];
 
+        if (isset($publicForAllRoles[$controller]) && in_array($action, $publicForAllRoles[$controller], true)) {
+            return;
+        }
+
+        $userId = (int)$identity->get('id');
         $usersTable = $this->fetchTable('Users');
         $user = $usersTable->get($userId, [
-            'contain' => ['Roles' => ['Permissions']]
+            'contain' => ['Roles' => ['Permissions']],
         ]);
 
         $role = $user->role;
-
         if (!$role || empty($role->permissions)) {
-            throw new ForbiddenException('No tienes permiso para acceder a esta página.');
+            throw new ForbiddenException('No tienes permiso para acceder a esta pagina.');
         }
 
-//         if ($role->name === 'Administrador') {
-//     return;
-// }
+        $permissionMap = $this->buildPermissionMap($role->permissions);
+        $controllerKey = strtolower($controller);
+        $actionKey = strtolower($action);
 
-        foreach ($role->permissions as $permission) {
-            if ($permission->controller === $controller && $permission->action === $action) {
-                return; 
+        if ($this->hasDirectPermission($permissionMap, $controllerKey, $actionKey)) {
+            return;
+        }
+
+        if ($this->hasImpliedPermission($permissionMap, $controllerKey, $actionKey, (string)($role->name ?? ''))) {
+            return;
+        }
+
+        $this->Flash->error('No tienes permiso para acceder a esa seccion.');
+
+        if ($this->request->is('ajax') || $this->request->accepts('application/json')) {
+            return $this->response
+                ->withStatus(403)
+                ->withType('application/json')
+                ->withStringBody(json_encode([
+                    'ok' => false,
+                    'message' => 'No autorizado',
+                ]));
+        }
+
+        $referer = (string)$this->referer(['controller' => 'Dashboard', 'action' => 'index'], true);
+        if ($referer === '' || str_contains(strtolower($referer), '/users/login')) {
+            return $this->redirect(['controller' => 'Dashboard', 'action' => 'index']);
+        }
+
+        return $this->redirect($referer);
+    }
+
+    private function buildPermissionMap(iterable $permissions): array
+    {
+        $map = [];
+        foreach ($permissions as $permission) {
+            $controller = strtolower((string)($permission->controller ?? ''));
+            $action = strtolower((string)($permission->action ?? ''));
+            if ($controller === '' || $action === '') {
+                continue;
             }
+            $map[$controller . '.' . $action] = true;
         }
 
-$this->Flash->error('No tienes permiso para acceder a esa sección.');
-return $this->redirect(['controller' => 'Users', 'action' => 'login']);
+        return $map;
+    }
 
+    private function hasDirectPermission(array $permissionMap, string $controller, string $action): bool
+    {
+        return isset($permissionMap[$controller . '.' . $action]);
+    }
+
+    private function hasImpliedPermission(array $permissionMap, string $controller, string $action, string $roleName): bool
+    {
+        if ($controller === 'schools') {
+            if ($action === 'territoriosresumen') {
+                return $this->hasDirectPermission($permissionMap, 'schools', 'filtros')
+                    || $this->hasDirectPermission($permissionMap, 'schools', 'misfiltros')
+                    || $this->hasDirectPermission($permissionMap, 'schools', 'filtrarschools');
+            }
+            return false;
+        }
+
+        if ($controller !== 'tickets') {
+            return false;
+        }
+
+        $roleName = strtolower($roleName);
+        if (
+            str_contains($roleName, 'admin') ||
+            str_contains($roleName, 'super') ||
+            str_contains($roleName, 'soporte') ||
+            str_contains($roleName, 'support')
+        ) {
+            return true;
+        }
+
+        if ($this->hasDirectPermission($permissionMap, 'tickets', 'manage')) {
+            return true;
+        }
+
+        if ($this->hasDirectPermission($permissionMap, 'tickets', 'index')) {
+            $allowedFromIndex = [
+                'index',
+                'view',
+                'add',
+                'addupdate',
+                'updatestatus',
+                'mynotifications',
+                'marknotificationread',
+                'downloadattachment',
+                'manage',
+            ];
+
+            return in_array($action, $allowedFromIndex, true);
+        }
+
+        return false;
     }
 }

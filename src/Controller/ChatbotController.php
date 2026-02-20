@@ -66,6 +66,12 @@ class ChatbotController extends AppController
                 return $this->jsonResponse($answer, false, $this->chipsMainModules());
             }
 
+            if ($this->isSupportRequest($question)) {
+                $answer = 'Para soporte, abre el formulario de tickets y registra la incidencia con detalle y adjuntos.';
+                $this->appendHistory($session, $history, $question, $answer);
+                return $this->jsonResponse($answer, true, $this->chipsSupportActions());
+            }
+
             // =========================
             // 0.5) PETICIONES DE EXPLICACIÓN/RESUMEN: MODO DOC (NO UI)
             // =========================
@@ -228,7 +234,7 @@ class ChatbotController extends AppController
                 'answer' => $answer,
                 'chips' => $chips,
                 'escalate' => $escalate,
-                'support_url' => Router::url('/support', false),
+                'support_url' => Router::url('/tickets/add', false),
             ]);
         } catch (\Throwable $e) {
             return $this->json([
@@ -236,7 +242,7 @@ class ChatbotController extends AppController
                 'answer' => "Tuve un detalle al responder. ¿Qué estabas intentando hacer exactamente?",
                 'chips' => $this->chipsMainModules(),
                 'escalate' => true,
-                'support_url' => Router::url('/support', false),
+                'support_url' => Router::url('/tickets/add', false),
             ]);
         }
     }
@@ -251,7 +257,7 @@ class ChatbotController extends AppController
             'answer' => $answer,
             'chips' => $chips,
             'escalate' => $escalate,
-            'support_url' => Router::url('/support', false),
+            'support_url' => Router::url('/tickets/add', false),
         ]);
     }
 
@@ -552,9 +558,19 @@ class ChatbotController extends AppController
         return [
             ['label' => 'Usuarios', 'value' => 'Usuarios'],
             ['label' => 'Escuelas', 'value' => 'Escuelas'],
+            ['label' => 'Soporte', 'value' => 'Soporte'],
             ['label' => 'Roles', 'value' => 'Roles'],
             ['label' => 'Permisos', 'value' => 'Permisos'],
             ['label' => 'About Us', 'value' => 'About Us'],
+        ];
+    }
+
+    private function chipsSupportActions(): array
+    {
+        return [
+            ['label' => 'Abrir soporte', 'value' => 'Abrir formulario de soporte'],
+            ['label' => 'Nuevo ticket', 'value' => 'Crear ticket de error'],
+            ['label' => 'Ver tickets', 'value' => 'Ver mis tickets'],
         ];
     }
 
@@ -859,6 +875,30 @@ class ChatbotController extends AppController
         foreach ($keys as $k) {
             if (str_contains($t, $k)) return true;
         }
+        return false;
+    }
+
+    private function isSupportRequest(string $q): bool
+    {
+        $t = $this->norm($q);
+        $keys = [
+            'soporte',
+            'support',
+            'ticket',
+            'tickets',
+            'incidencia',
+            'reportar error',
+            'levantar error',
+            'ayuda tecnica',
+            'mesa de ayuda',
+        ];
+
+        foreach ($keys as $k) {
+            if (str_contains($t, $k)) {
+                return true;
+            }
+        }
+
         return false;
     }
 

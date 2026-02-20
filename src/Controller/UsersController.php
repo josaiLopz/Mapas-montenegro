@@ -183,6 +183,10 @@ class UsersController extends AppController
     {
         $this->request->allowMethod(['get', 'post']);
 
+        if ($this->request->is('get') && $this->request->getQuery('redirect')) {
+            $this->Flash->error('Necesitas iniciar sesion para continuar.');
+        }
+
         $result = $this->Authentication->getResult();
 
        if ($result->isValid()) {

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $cakeDescription = 'Mapa Distribuidores Montenegro';
 $identity = $this->request->getAttribute('identity');
 $user = $identity ? $identity->getOriginalData() : null;
@@ -10,7 +10,7 @@ $profileImage = (!empty($user->avatar))
 $allUsers = $this->get('allUsers') ?? [];
 /**
  * ===============================
- *   SISTEMA DINÁMICO DE PERMISOS
+ *   SISTEMA DINÃMICO DE PERMISOS
  * ===============================
  */
 
@@ -31,12 +31,20 @@ $can = function (string $controller, string $action) use ($permissionsMap): bool
     return isset($permissionsMap[$key]);
 };
 
+$roleName = strtolower((string)($user->role->name ?? ''));
+$isTicketManagerByRole = str_contains($roleName, 'admin')
+    || str_contains($roleName, 'super')
+    || str_contains($roleName, 'soporte')
+    || str_contains($roleName, 'support');
+$canTicketsBase = $isTicketManagerByRole || $can('Tickets', 'manage') || $can('Tickets', 'index');
+$canTicketNotifications = $canTicketsBase || $can('Tickets', 'myNotifications');
+
 /**
- * Construcción dinámica del sidebar
+ * ConstrucciÃ³n dinÃ¡mica del sidebar
  */
 $sidebarItems = [];
 
-// Administración
+// AdministraciÃ³n
 if ($can('Dashboard', 'index')) {
     $sidebarItems[] = ['Dashboard', ['controller' => 'Dashboard', 'action' => 'index']];
 }
@@ -68,6 +76,9 @@ if ($can('Schools', 'asignar')) {
 if ($can('Schools', 'filtros')) {
     $sidebarItems[] = ['Filtros Admin', ['controller' => 'Schools', 'action' => 'filtros']];
 }
+if ($canTicketsBase) {
+    $sidebarItems[] = ['Tickets', ['controller' => 'Tickets', 'action' => 'index']];
+}
 
 $showSidebar = !empty($sidebarItems);
 
@@ -86,21 +97,30 @@ $fechaNav = $dias[(int)date('w')] . ' ' . date('j') . ' de ' . $meses[(int)date(
         <?= $cakeDescription ?>:
         <?= $this->fetch('title') ?>
     </title>
+    <script>
+      (function () {
+        try {
+          if (localStorage.getItem('layout.sidebarCollapsed') === '1') {
+            document.documentElement.classList.add('sidebar-collapsed');
+          }
+        } catch (e) {}
+      })();
+    </script>
     <?= $this->Html->meta('icon', '/img/icon.png') ?>
 
     <?= $this->Html->css(['normalize.min', 'milligram.min', 'fonts', 'cake']) ?>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <?= $this->fetch('meta') ?>
     <?= $this->fetch('css') ?>
     <?= $this->fetch('script') ?>
 <style>
 :root {
-    --bg: #f5f3ef;
-    --panel: #ffffff;
-    --ink: #1f1b16;
-    --muted: #6f6860;
-    --accent: #c16f3e;
-    --shadow: 0 10px 30px rgba(0,0,0,0.08);
+    --bg: #ffffff;
+    --ink: #ffffff;
+    --muted: #c2b6b6;
+    --accent: #ffffff;
+    --shadow: 0 10px 30px rgba(255, 255, 255, 0.08);
     --radius: 16px;
     --sidebar: 280px;
     --topbar: 92px;
@@ -115,6 +135,28 @@ html, body {
 
 body {
     min-height: 100vh;
+}
+
+.flash-stack {
+    position: fixed;
+    top: 84px;
+    right: 16px;
+    width: min(420px, calc(100vw - 32px));
+    z-index: 20000;
+}
+
+.flash-stack .message {
+    width: auto;
+    margin-bottom: 10px;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.flash-stack .message.is-closing {
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
 }
 
 /* Forzar ancho completo en todo el sistema */
@@ -188,6 +230,103 @@ body {
     white-space: nowrap;
 }
 
+.ticket-notif-wrap {
+    position: relative;
+}
+
+.ticket-notif-btn {
+    position: relative;
+    border: 1px solid #eadfcf;
+    background: #fff;
+    color: #2f2922;
+    border-radius: 999px;
+    width: 44px;
+    height: 44px;
+    cursor: pointer;
+    font-size: 1.8rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ticket-notif-btn .bi {
+    font-size: 1.7rem;
+    line-height: 1;
+}
+
+.ticket-notif-count {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: #aa2334;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+}
+
+.ticket-notif-panel {
+    position: absolute;
+    right: 0;
+    top: 54px;
+    width: min(380px, 90vw);
+    max-height: 420px;
+    overflow: auto;
+    border-radius: 12px;
+    border: 1px solid #e2d9cd;
+    background: #fff;
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.18);
+    display: none;
+    z-index: 16000;
+}
+
+.ticket-notif-panel.open {
+    display: block;
+}
+
+.ticket-notif-head {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.ticket-notif-list {
+    display: grid;
+}
+
+.ticket-notif-item {
+    display: block;
+    padding: 10px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    text-decoration: none;
+    color: #1f1b16;
+}
+
+.ticket-notif-item:hover {
+    background: #faf6f1;
+}
+
+.ticket-notif-item small {
+    color: #6f6860;
+    display: block;
+}
+
+.ticket-notif-empty {
+    padding: 14px;
+    color: #6f6860;
+    font-size: 1.3rem;
+}
+
 .app-shell {
     display: grid;
     grid-template-columns: var(--sidebar) 1fr;
@@ -206,6 +345,57 @@ body {
     top: var(--topbar);
     height: calc(100vh - var(--topbar));
     overflow: auto;
+}
+
+.desktop-sidebar-toggle {
+    display: none;
+}
+
+@media (min-width: 821px) {
+    .app-shell {
+        transition: grid-template-columns 0.22s ease;
+    }
+
+    .sidebar {
+        transition: transform 0.22s ease;
+        will-change: transform;
+    }
+
+    .desktop-sidebar-toggle {
+        display: inline-flex;
+        position: fixed;
+        top: calc(var(--topbar) + 50vh - 26px);
+        left: calc(var(--sidebar) - 12px);
+        width: 24px;
+        height: 52px;
+        border: 0;
+        border-radius: 0 10px 10px 0;
+        background: #aa2334;
+        color: #fff;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 12000;
+        box-shadow: 0 10px 24px rgba(0,0,0,0.22);
+        font-size: 1.8rem;
+        line-height: 1;
+        padding: 0;
+    }
+
+    body.sidebar-collapsed .app-shell,
+    html.sidebar-collapsed .app-shell {
+        grid-template-columns: 1fr;
+    }
+
+    body.sidebar-collapsed .sidebar,
+    html.sidebar-collapsed .sidebar {
+        display: none;
+    }
+
+    body.sidebar-collapsed .desktop-sidebar-toggle,
+    html.sidebar-collapsed .desktop-sidebar-toggle {
+        left: 2px;
+    }
 }
 
 .sidebar h4 {
@@ -331,7 +521,7 @@ body {
     :root { --sidebar: 220px; }
 }
 
-/* =============== ✅ FIX RESPONSIVE (SOLO MÓVIL) =============== */
+/* =============== âœ… FIX RESPONSIVE (SOLO MÃ“VIL) =============== */
 .mobile-ui-toggle,
 .mobile-sidebar-overlay {
     display: none;
@@ -340,9 +530,9 @@ body {
 #chatbot-fab{
   position: fixed;
   right: 18px;
-  bottom: 18px;
-  width: 54px;
-  height: 54px;
+  bottom: 158px;
+  width: 50px;
+  height: 50px;
   border-radius: 999px;
   border: 0;
   background:rgb(0, 0, 0);
@@ -490,7 +680,7 @@ body {
     outline: none;
     box-shadow: 0 0 0 3px rgba(170,35,52,.18) !important;
   }
-/* Solo en pantallas pequeñas */
+/* Solo en pantallas pequeÃ±as */
 @media (max-width: 820px) {
     :root { --topbar: 72px; }
 
@@ -509,7 +699,7 @@ body {
         gap: 10px;
     }
 
-    /* Botón para abrir/cerrar sidebar (solo móvil, solo si existe sidebar) */
+    /* BotÃ³n para abrir/cerrar sidebar (solo mÃ³vil, solo si existe sidebar) */
     .mobile-ui-toggle {
         display: inline-flex;
         align-items: center;
@@ -537,7 +727,7 @@ body {
     }
     .top-nav-links a {
         white-space: nowrap;
-        padding: 14px 16px; /* solo reduce en móvil */
+        padding: 14px 16px; /* solo reduce en mÃ³vil */
         font-size: 1.4rem;
         border-radius: 12px;
     }
@@ -552,7 +742,7 @@ body {
 
     .users-strip {
         width: 100%;
-        overflow-x: auto; /* ya lo tenías, aseguramos ancho completo */
+        overflow-x: auto; /* ya lo tenÃ­as, aseguramos ancho completo */
         -webkit-overflow-scrolling: touch;
         padding-bottom: 6px;
     }
@@ -603,7 +793,7 @@ body {
         pointer-events: auto;
     }
 
-    /* Evitar que el contenido quede pegado en móvil */
+    /* Evitar que el contenido quede pegado en mÃ³vil */
     .page-card {
         border-radius: 0;
         padding: 16px;
@@ -611,10 +801,10 @@ body {
 }
 /* =============== FIN FIX RESPONSIVE =============== */
 
-/* Botón flotante (tu botón existente) */
+/* BotÃ³n flotante (tu botÃ³n existente) */
 .floating-toggle {
     position: fixed;
-    bottom: 122px;
+    bottom: 222px;
     right: 22px;
     z-index: 9999;
     background: #aa2334;
@@ -633,6 +823,11 @@ body {
     text-align: center;
 }
 
+.floating-toggle .bi {
+    font-size: 2rem;
+    line-height: 1;
+}
+
 .floating-toggle:hover {
     background: #8f1d2b;
     transform: translateY(-2px);
@@ -642,6 +837,7 @@ body {
 body.clean-view .top-nav { display: none; }
 body.clean-view .sidebar { display: none; }
 body.clean-view .app-shell { grid-template-columns: 1fr !important; }
+body.clean-view .desktop-sidebar-toggle { display: none !important; }
 body.clean-view .content { padding: 10px 20px; }
 body.clean-view .page-card {
     box-shadow: none;
@@ -652,7 +848,7 @@ body.clean-view .page-card {
 </head>
 <body>
 
-    <!-- Overlay para sidebar en móvil -->
+    <!-- Overlay para sidebar en mÃ³vil -->
     <div class="mobile-sidebar-overlay" id="mobileSidebarOverlay"></div>
 
     <!-- NAV PRINCIPAL -->
@@ -663,8 +859,8 @@ body.clean-view .page-card {
                 <?= $this->Html->link(' <img class="logo-sim" src="/img/logo.png" alt="Logo">', ['controller' => 'Dashboard', 'action' => 'index'], ['escape' => false]) ?>
 
                 <?php if ($identity && $showSidebar): ?>
-                    <button class="mobile-ui-toggle" id="mobileSidebarBtn" type="button" aria-label="Abrir menú">
-                        ☰
+                    <button class="mobile-ui-toggle" id="mobileSidebarBtn" type="button" aria-label="Abrir menÃº">
+                        â˜°
                     </button>
                 <?php endif; ?>
             </div>
@@ -672,12 +868,32 @@ body.clean-view .page-card {
             <?php if ($identity): ?>
             <div class="top-nav-links">
                 <?= $this->Html->link('Escuelas', ['controller' => 'Schools', 'action' => 'misFiltros']) ?>
+                <?php if ($canTicketsBase): ?>
+                    <?= $this->Html->link('Tickets', ['controller' => 'Tickets', 'action' => 'index']) ?>
+                <?php endif; ?>
                 <?= $this->Html->link('Acerca de', ['controller' => 'AboutUs', 'action' => 'publicView']) ?>
                 <?= $this->Html->link('Mi perfil', ['controller' => 'Users', 'action' => 'profile']) ?>
                 <?= $this->Html->link('Salir', ['controller' => 'Users', 'action' => 'logout']) ?>
             </div>
 
             <div class="top-nav-right">
+                <?php if ($canTicketNotifications): ?>
+                    <div class="ticket-notif-wrap">
+                        <button type="button" id="ticketNotifBtn" class="ticket-notif-btn" aria-label="Notificaciones de tickets">
+                            <i class="bi bi-bell-fill" aria-hidden="true"></i>
+                            <span id="ticketNotifCount" class="ticket-notif-count">0</span>
+                        </button>
+                        <div id="ticketNotifPanel" class="ticket-notif-panel" aria-hidden="true">
+                            <div class="ticket-notif-head">
+                                <strong>Notificaciones soporte</strong>
+                                <button type="button" id="ticketNotifMarkAll" class="button button-outline">Marcar leidas</button>
+                            </div>
+                            <div id="ticketNotifList" class="ticket-notif-list">
+                                <div class="ticket-notif-empty">Sin notificaciones nuevas</div>
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
                 <div class="users-strip">
                     <h3>Usuarios</h3>
                     <div class="users-list">
@@ -719,9 +935,18 @@ body.clean-view .page-card {
     <?php if ($identity): ?>
     <div class="app-shell<?= $showSidebar ? '' : ' no-sidebar' ?>">
       <?php if ($identity && $showSidebar): ?>
+      <button
+          type="button"
+          id="desktopSidebarToggle"
+          class="desktop-sidebar-toggle"
+          aria-label="Ocultar menu lateral"
+          aria-expanded="true"
+          title="Ocultar menu lateral"><i class="bi bi-caret-left-fill" aria-hidden="true"></i></button>
+      <?php endif; ?>
+      <?php if ($identity && $showSidebar): ?>
       <aside class="sidebar" id="sidebar">
       
-          <h4>Administración</h4>
+          <h4>AdministraciÃ³n</h4>
       
           <div class="nav-links">
               <?php foreach ($sidebarItems as $item): ?>
@@ -734,28 +959,13 @@ body.clean-view .page-card {
               <?= $this->Html->link('Acerca de', ['controller' => 'AboutUs', 'action' => 'index']) ?>
           </div>
       
-          <div class="user-self">
-              <img src="<?= $profileImage ?>" alt="Avatar">
-              <div>
-                  <strong><?= h($user->email) ?></strong>
-                  <?= $this->Form->postLink(
-                      'Salir',
-                      ['controller' => 'Users', 'action' => 'logout'],
-                      [
-                          'confirm' => '¿Cerrar sesión?',
-                          'class' => 'button button-outline'
-                      ]
-                  ) ?>
-              </div>
-          </div>
-      
       </aside>
       <?php endif; ?>
       
 
         <main class="content1">
             <div class="page-card">
-                <?= $this->Flash->render() ?>
+                <div class="flash-stack"><?= $this->Flash->render() ?></div>
                 <?= $this->fetch('content') ?>
             </div>
         </main>
@@ -763,7 +973,7 @@ body.clean-view .page-card {
     <?php else: ?>
     <main class="main">
         <div class="container">
-            <?= $this->Flash->render() ?>
+            <div class="flash-stack"><?= $this->Flash->render() ?></div>
             <?= $this->fetch('content') ?>
         </div>
     </main>
@@ -771,8 +981,10 @@ body.clean-view .page-card {
 
     <footer></footer>
 
-    <button id="toggle-ui" class="floating-toggle">⛶</button>
-    <?php if ($identity): // opcional: solo si está logueado ?>
+    <button id="toggle-ui" class="floating-toggle" aria-label="Activar vista limpia" title="Activar vista limpia">
+        <i class="bi bi-fullscreen" aria-hidden="true"></i>
+    </button>
+    <?php if ($identity): // opcional: solo si estÃ¡ logueado ?>
     <button type="button" id="chatbot-fab" title="Ayuda" aria-label="Abrir ayuda" style="padding:0; overflow:hidden;">
         <img src="/img/bot.png" alt="Bot" style="width:70%; height:100%; object-fit:cover;">
     </button>
@@ -793,18 +1005,18 @@ body.clean-view .page-card {
     
       <div id="chatbot-escalate" style="display:none;">
         <div style="font-size:12px; margin-bottom:8px;">
-          No pude resolverlo con seguridad. ¿Quieres contactar a soporte?
+          No pude resolverlo con seguridad. Â¿Quieres contactar a soporte?
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <a id="chatbot-support-link" class="button" href="<?= $this->Url->build('/support') ?>">
+          <a id="chatbot-support-link" class="button" href="<?= $this->Url->build('/tickets/add') ?>">
             Contactar soporte
           </a>
-          <button type="button" id="chatbot-copy" class="button button-outline">Copiar conversación</button>
+          <button type="button" id="chatbot-copy" class="button button-outline">Copiar conversaciÃ³n</button>
         </div>
       </div>
     
       <div id="chatbot-inputbar">
-        <input id="chatbot-input" type="text" placeholder="Escribe tu pregunta…">
+        <input id="chatbot-input" type="text" placeholder="Escribe tu preguntaâ€¦">
         <button type="button" id="chatbot-send">Enviar</button>
       </div>
     </div>
@@ -812,18 +1024,89 @@ body.clean-view .page-card {
     
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // Botón de vista limpia (tu lógica)
+    (function () {
+        const messages = document.querySelectorAll('.flash-stack .message');
+        if (!messages.length) return;
+
+        const dismiss = (el) => {
+            if (!el || el.dataset.closing === '1') return;
+            el.dataset.closing = '1';
+            el.classList.add('is-closing');
+            window.setTimeout(() => el.remove(), 260);
+        };
+
+        messages.forEach((message) => {
+            window.setTimeout(() => dismiss(message), 5000);
+            message.addEventListener('click', () => dismiss(message));
+        });
+    })();
+
+    (function(){
+        const idleLimitMs = 10 * 60 * 1000;
+        const logoutUrl = "<?= $this->Url->build(['controller' => 'Users', 'action' => 'logout']) ?>";
+        let idleTimer = null;
+
+        const resetIdleTimer = () => {
+            if (idleTimer) {
+                clearTimeout(idleTimer);
+            }
+            idleTimer = setTimeout(() => {
+                window.location.href = logoutUrl;
+            }, idleLimitMs);
+        };
+
+        ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'].forEach((eventName) => {
+            window.addEventListener(eventName, resetIdleTimer, { passive: true });
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                resetIdleTimer();
+            }
+        });
+
+        resetIdleTimer();
+    })();
+    // BotÃ³n de vista limpia (tu lÃ³gica)
     const btn = document.getElementById('toggle-ui');
     if (btn) {
+        const icon = btn.querySelector('i');
         btn.addEventListener('click', () => {
-            document.body.classList.toggle('clean-view');
-            btn.textContent = '⛶';
+            const isClean = document.body.classList.toggle('clean-view');
+            if (icon) {
+                icon.classList.toggle('bi-fullscreen', !isClean);
+                icon.classList.toggle('bi-fullscreen-exit', isClean);
+            }
+            btn.setAttribute('aria-label', isClean ? 'Salir de vista limpia' : 'Activar vista limpia');
+            btn.setAttribute('title', isClean ? 'Salir de vista limpia' : 'Activar vista limpia');
         });
     }
 
-    // Sidebar móvil (solo si existe)
+    // Sidebar mÃ³vil (solo si existe)
     const sidebarBtn = document.getElementById('mobileSidebarBtn');
     const overlay = document.getElementById('mobileSidebarOverlay');
+    const desktopSidebarToggle = document.getElementById('desktopSidebarToggle');
+    const desktopSidebarStorageKey = 'layout.sidebarCollapsed';
+
+    function applyDesktopSidebarState(collapsed) {
+        if (window.innerWidth <= 820) {
+            document.body.classList.remove('sidebar-collapsed');
+            document.documentElement.classList.remove('sidebar-collapsed');
+            return;
+        }
+        document.body.classList.toggle('sidebar-collapsed', collapsed);
+        document.documentElement.classList.toggle('sidebar-collapsed', collapsed);
+        if (desktopSidebarToggle) {
+            const icon = desktopSidebarToggle.querySelector('i');
+            if (icon) {
+                icon.classList.toggle('bi-caret-right-fill', collapsed);
+                icon.classList.toggle('bi-caret-left-fill', !collapsed);
+            }
+            desktopSidebarToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            desktopSidebarToggle.setAttribute('aria-label', collapsed ? 'Mostrar menu lateral' : 'Ocultar menu lateral');
+            desktopSidebarToggle.setAttribute('title', collapsed ? 'Mostrar menu lateral' : 'Ocultar menu lateral');
+        }
+    }
 
     function openSidebar() {
         document.body.classList.add('sidebar-open');
@@ -844,11 +1127,143 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Escape') closeSidebar();
         });
 
-        // Si pasas a desktop, asegúrate de cerrar estado móvil
+        // Si pasas a desktop, asegÃºrate de cerrar estado mÃ³vil
         window.addEventListener('resize', () => {
             if (window.innerWidth > 820) closeSidebar();
         });
     }
+
+    if (desktopSidebarToggle) {
+        const savedCollapsed = localStorage.getItem(desktopSidebarStorageKey) === '1';
+        applyDesktopSidebarState(savedCollapsed);
+
+        desktopSidebarToggle.addEventListener('click', () => {
+            const nowCollapsed = !document.body.classList.contains('sidebar-collapsed');
+            applyDesktopSidebarState(nowCollapsed);
+            localStorage.setItem(desktopSidebarStorageKey, nowCollapsed ? '1' : '0');
+        });
+
+        window.addEventListener('resize', () => {
+            const collapsed = localStorage.getItem(desktopSidebarStorageKey) === '1';
+            applyDesktopSidebarState(collapsed);
+        });
+    }
+    (function(){
+        const btn = document.getElementById('ticketNotifBtn');
+        const panel = document.getElementById('ticketNotifPanel');
+        const countEl = document.getElementById('ticketNotifCount');
+        const listEl = document.getElementById('ticketNotifList');
+        const markAllBtn = document.getElementById('ticketNotifMarkAll');
+        if (!btn || !panel || !countEl || !listEl) return;
+
+        const csrfToken = "<?= h($this->request->getAttribute('csrfToken') ?? '') ?>";
+        const listUrl = "<?= $this->Url->build(['controller' => 'Tickets', 'action' => 'myNotifications']) ?>";
+        const markAllUrl = "<?= $this->Url->build(['controller' => 'Tickets', 'action' => 'markNotificationRead']) ?>";
+
+        function escapeHtml(raw) {
+            return String(raw ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function setCount(value){
+            const n = Number(value) || 0;
+            countEl.textContent = String(n);
+            countEl.style.display = n > 0 ? 'inline-flex' : 'none';
+        }
+
+        function renderRows(rows){
+            if (!Array.isArray(rows) || rows.length === 0) {
+                listEl.innerHTML = '<div class="ticket-notif-empty">Sin notificaciones nuevas</div>';
+                return;
+            }
+
+            listEl.innerHTML = rows.map((row) => {
+                const id = Number(row.id) || 0;
+                return `
+                    <a href="${escapeHtml(row.url || '#')}" class="ticket-notif-item" data-id="${id}">
+                        <strong>${escapeHtml(row.title || 'Notificacion')}</strong>
+                        <small>${escapeHtml(row.message || '')}</small>
+                        <small>${escapeHtml(row.created || '')}</small>
+                    </a>
+                `;
+            }).join('');
+
+            listEl.querySelectorAll('.ticket-notif-item').forEach((link) => {
+                link.addEventListener('click', async () => {
+                    const id = Number(link.getAttribute('data-id')) || 0;
+                    if (!id) return;
+
+                    const headers = { 'Accept': 'application/json' };
+                    if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+
+                    try {
+                        await fetch(markAllUrl + '/' + id, {
+                            method: 'POST',
+                            headers,
+                            credentials: 'same-origin',
+                        });
+                    } catch (_e) {}
+                });
+            });
+        }
+
+        async function fetchNotifications() {
+            try {
+                const r = await fetch(listUrl, {
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'same-origin'
+                });
+                const t = await r.text();
+                const data = JSON.parse(t);
+                if (!r.ok || !data || !data.ok) return;
+                setCount(data.unread_count || 0);
+                renderRows(data.rows || []);
+            } catch (_e) {}
+        }
+
+        async function markAllRead(){
+            const headers = { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' };
+            if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+
+            try {
+                await fetch(markAllUrl, {
+                    method: 'POST',
+                    headers,
+                    credentials: 'same-origin',
+                    body: 'all=1',
+                });
+                fetchNotifications();
+            } catch (_e) {}
+        }
+
+        btn.addEventListener('click', () => {
+            panel.classList.toggle('open');
+            panel.setAttribute('aria-hidden', panel.classList.contains('open') ? 'false' : 'true');
+            if (panel.classList.contains('open')) {
+                fetchNotifications();
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!panel.contains(e.target) && !btn.contains(e.target)) {
+                panel.classList.remove('open');
+                panel.setAttribute('aria-hidden', 'true');
+            }
+        });
+
+        markAllBtn?.addEventListener('click', markAllRead);
+
+        fetchNotifications();
+        setInterval(() => {
+            if (!document.hidden) {
+                fetchNotifications();
+            }
+        }, 60000);
+    })();
     (function(){
         const askUrl = "<?= $this->Url->build('/chatbot/ask', ['escape' => false]) ?>";
         const csrfToken = "<?= h($this->request->getAttribute('csrfToken') ?? '') ?>";
@@ -1033,7 +1448,7 @@ document.addEventListener('DOMContentLoaded', () => {
           let data = null;
           try { data = JSON.parse(txt); } catch(e) { data = { ok:false, answer: txt }; }
       
-          if (!r.ok || !data) throw new Error('Respuesta inválida');
+          if (!r.ok || !data) throw new Error('Respuesta invÃ¡lida');
           return data;
         }
       
@@ -1047,7 +1462,7 @@ document.addEventListener('DOMContentLoaded', () => {
           addUser(q);
           const thinkingNode = document.createElement('div');
           thinkingNode.className = 'chatbot-msg bot';
-          thinkingNode.innerHTML = '<div class="chatbot-bubble">Estoy revisando…</div>';
+          thinkingNode.innerHTML = '<div class="chatbot-bubble">Estoy revisandoâ€¦</div>';
           msgs.appendChild(thinkingNode);
           msgs.scrollTop = msgs.scrollHeight;
       
