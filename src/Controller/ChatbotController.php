@@ -71,7 +71,33 @@ class ChatbotController extends AppController
                 $this->appendHistory($session, $history, $question, $answer);
                 return $this->jsonResponse($answer, true, $this->chipsSupportActions());
             }
+            // 0.6) DEFINICIONES / SIGNIFICADOS (modo glosario)
+            if ($this->isDefinitionRequest($question)) {
 
+                $kbRows = $this->retrieveKbSafe($question, $context, 10);
+
+                $plan = "El usuario pide significado/definición. "
+                    . "Responde con: (1) definición corta, (2) fórmula si aplica, "
+                    . "(3) ejemplo numérico simple, (4) cómo interpretarlo en el dashboard. "
+                    . "NO ofrezcas acciones tipo buscar/crear/editar. "
+                    . "Cierra con UNA sola pregunta: ¿En qué pantalla o KPI lo estás viendo?";
+
+                $answer = $this->ollamaReplyFromPlan(
+                    $question,
+                    $context,
+                    $history,
+                    $flow,
+                    $plan,
+                    ['tone' => 'conversacional', 'must_ask' => '(ninguna)'],
+                    $kbRows
+                );
+
+                $answer = $this->postSanitizeAnswer(trim($answer));
+                $answer = $this->stripBlandOpeners($answer);
+
+                $this->appendHistory($session, $history, $question, $answer);
+                return $this->jsonResponse($answer, false, []); // chips vacíos o chips tipo "YoY/MoM/KPI"
+            }
             // =========================
             // 0.5) PETICIONES DE EXPLICACIÓN/RESUMEN: MODO DOC (NO UI)
             // =========================
@@ -964,4 +990,23 @@ class ChatbotController extends AppController
         $t = preg_replace('/\s+/', ' ', $t);
         return $t ?: '';
     }
+    private function isDefinitionRequest(string $q): bool
+{
+    $t = $this->norm($q);
+
+    // frases típicas de definición
+    $keys = [
+        'que significa','significado','definicion','que es','concepto','glosario',
+        'explicame','explica','a que se refiere','que quiere decir'
+    ];
+    foreach ($keys as $k) {
+        if (str_contains($t, $k)) return true;
+    }
+
+    // términos sueltos muy comunes
+    $short = ['yoy','mom','ytd','kpi','variacion yoy','variacion mom'];
+    if (in_array($t, $short, true)) return true;
+
+    return false;
+}
 }

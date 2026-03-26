@@ -1,4 +1,5 @@
 ﻿<?php
+
 $cakeDescription = 'Mapa Distribuidores Montenegro';
 $identity = $this->request->getAttribute('identity');
 $user = $identity ? $identity->getOriginalData() : null;
@@ -70,7 +71,12 @@ if ($can('Roles', 'index')) {
 if ($can('Schools', 'index')) {
     $sidebarItems[] = ['Schools', ['controller' => 'Schools', 'action' => 'index']];
 }
-
+if ($can('Schools', 'Geocodificar')) {
+    $sidebarItems[] = ['Geocodificar', ['controller' => 'Schools', 'action' => 'geocodificar']];
+}
+if ($can('Materials', 'index')) {
+    $sidebarItems[] = ['Materiales', ['controller' => 'Materials', 'action' => 'index']];
+}
 if ($can('Schools', 'transfer')) {
     $sidebarItems[] = ['Transferir escuela', ['controller' => 'Schools', 'action' => 'transfer']];
 }
@@ -100,6 +106,7 @@ $fechaNav = $dias[(int)date('w')] . ' ' . date('j') . ' de ' . $meses[(int)date(
         <?= $cakeDescription ?>:
         <?= $this->fetch('title') ?>
     </title>
+    <?= $this->Html->meta('csrfToken', $this->request->getAttribute('csrfToken')); ?>
     <script>
       (function () {
         try {
@@ -1047,7 +1054,9 @@ document.addEventListener('DOMContentLoaded', () => {
     })();
 
     (function(){
-        const idleLimitMs = 10 * 60 * 1000;
+        // const idleLimitMs = 10 * 60 * 1000;
+        //Activar esto en caso de que el sistema necesite mantener sesion durante una hora.
+        const idleLimitMs = 60 * 60 * 1000; // 60 minutos
         const logoutUrl = "<?= $this->Url->build(['controller' => 'Users', 'action' => 'logout']) ?>";
         let idleTimer = null;
 

@@ -1,0 +1,279 @@
+.wrap{ background:#fff; border:1px solid #e6e6e6; border-radius:14px; padding:14px; position:relative; }
+  .topbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .tabs{ display:flex; gap:14px; align-items:center; }
+  .tab{ padding:8px 14px; border-radius:999px; cursor:pointer; color:#8b1d2c; }
+  .tab.active{ background:#8b1d2c; color:#fff; }
+  .actions button, .actions a{ margin-left:8px; }
+
+  .panel{ border:1px solid #eee; border-radius:12px; padding:14px; background:#fafafa; position:relative; }
+  .grid{ display:grid; grid-template-columns: repeat(12, 1fr); gap:12px; }
+  .col-3{ grid-column: span 3; }
+  .col-4{ grid-column: span 4; }
+  .col-6{ grid-column: span 6; }
+  .col-12{ grid-column: span 12; }
+
+  @media(max-width: 1100px){ .col-3,.col-4,.col-6{ grid-column: span 12; } }
+
+  .hidden{ display:none; }
+.corner-btn{
+  position:absolute;
+  top:-35px;
+  right:3px;
+
+  background:transparent !important;
+  border:none !important;
+  padding:0;
+  cursor:pointer;
+
+  appearance:none;
+  -webkit-appearance:none;
+  box-shadow:none;
+  outline:none;
+}
+
+.corner-btn:hover,
+.corner-btn:focus,
+.corner-btn:active{
+  background:transparent !important;
+  box-shadow:none !important;
+  outline:none !important;
+}
+  .corner-btn img{
+    width:16px;
+    height:16px;
+    display:block;
+
+  }
+#map-layout{
+  position:relative;
+}
+.toggle-results-btn{
+  position:absolute;
+  top:12px;
+  right:432px;   /* ancho del panel (420px) + gap */
+  background:transparent;
+  border:none;
+  cursor:pointer;
+  z-index:1000;
+}
+.map-layout.results-collapsed .toggle-results-btn{
+  top:-40px;      /* sube a la franja blanca */
+  right:12px;
+}
+  @media (max-width: 768px){
+    .corner-btn.map-corner{
+      top:12px;
+      right:12px;
+    }
+  }
+  .map-layout{
+    display:grid;
+    grid-template-columns: 1fr 420px;
+    gap:12px;
+    margin-top:14px;
+  }
+  .map-layout.results-collapsed{
+    grid-template-columns: 1fr;
+  }
+  #results-panel{
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+    overflow:hidden;
+  }
+  #results-panel.hidden{
+    display:none !important;
+  }
+  .results-scroll{
+    flex:1;
+    min-height:0;
+    overflow:auto;
+    padding-right:2px;
+  }
+  .results-scroll #tabla-nombres{
+    margin-bottom:0;
+  }
+  .visits-panel{
+    margin-top:12px;
+    border-top:1px dashed #e6e6e6;
+    padding-top:10px;
+  }
+  .visits-toolbar{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:8px;
+  }
+  .visits-toolbar .btn-group{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+  .visit-item{
+    border:1px solid #eee;
+    border-radius:10px;
+    padding:8px;
+    margin-bottom:8px;
+    background:#fafafa;
+  }
+  .visit-title{ font-weight:700; font-size:13px; }
+  .visit-meta{ font-size:12px; color:#555; margin:4px 0 6px 0; }
+  .visit-actions{ display:flex; gap:6px; flex-wrap:wrap; }
+  .visit-actions button{
+    border:0;
+    border-radius:8px;
+    padding:5px 8px;
+    font-size:12px;
+    cursor:pointer;
+  }
+  .btn-soft{ background:#e9ecef; color:#333; }
+  .btn-primary-soft{ background:#8b1d2c; color:#fff; }
+  .btn-success-soft{ background:#198754; color:#fff; }
+  .btn-info-soft{ background:#0d6efd; color:#fff; }
+  .btn-warning-soft{ background:#fd7e14; color:#fff; }
+  .btn-active{ background:#8b1d2c !important; color:#fff !important; }
+  .visits-empty{ font-size:12px; color:#666; }
+  .route-info{
+    font-size:12px;
+    color:#333;
+    background:#f1f3f5;
+    border:1px solid #e6e6e6;
+    border-radius:8px;
+    padding:6px 8px;
+    margin-bottom:8px;
+  }
+  .modal-backdrop{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.45);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:10000;
+  }
+  .modal-card{
+    background:#fff;
+    width:min(520px, 92vw);
+    border-radius:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+    overflow:hidden;
+  }
+  .modal-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:10px 14px;
+    border-bottom:1px solid #eee;
+  }
+  .modal-body{ padding:12px 14px; }
+  .modal-actions{
+    display:flex;
+    gap:8px;
+    justify-content:flex-end;
+    padding:10px 14px;
+    border-top:1px solid #eee;
+  }
+  .modal-actions button{
+    border:0;
+    border-radius:8px;
+    padding:6px 10px;
+    cursor:pointer;
+  }
+  .visits-modal-card{
+    width:min(760px, 92vw);
+    max-height:86vh;
+    overflow:auto;
+  }
+  .visits-inline-note{
+    margin-top:10px;
+    font-size:12px;
+    color:#666;
+    padding:8px 10px;
+    border:1px dashed #e1e1e1;
+    border-radius:8px;
+    background:#fafafa;
+  }
+  .top-nav-links .agenda-nav-btn{
+    appearance:none;
+    -webkit-appearance:none;
+    border:0;
+    margin:0;
+    min-height:0;
+    height:auto;
+    line-height:1.2;
+    text-transform:none;
+    letter-spacing:normal;
+    white-space:nowrap;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(255, 255, 255, 0.6);
+    color:#000000;
+    font-weight:600;
+    font-size:1.6rem;
+    padding:26px;
+    cursor:pointer;
+    border-radius:0;
+    box-shadow:none;
+  }
+  .top-nav-links .agenda-nav-btn:hover{
+    background:#aa2334;
+    color:#ffffff;
+  }
+  @media (max-width: 820px){
+    .top-nav-links .agenda-nav-btn{
+      font-size:1.4rem;
+      padding:14px 16px;
+      border-radius:12px;
+    }
+  }
+
+  /* Responsive: sin mover ni ocultar elementos */
+  @media (max-width: 1100px){
+    .topbar{ flex-wrap:wrap; gap:8px; }
+    .tabs{ flex-wrap:wrap; gap:8px; }
+    .actions{ display:flex; flex-wrap:wrap; gap:8px; }
+    .actions button, .actions a{ margin-left:0; }
+  }
+  @media (max-width: 1000px){
+    .map-layout{ grid-template-columns: 1fr; }
+    #results-panel{ width:100%; }
+  }
+  @media (max-width: 768px){
+    #map{ height:60vh; min-height:360px; }
+    #tabla-nombres{ display:block; overflow-x:auto; }
+    #tabla-nombres th, #tabla-nombres td{ white-space:nowrap; }
+  }
+  .territories-legend{
+    position:absolute;
+    left:12px;
+    top:12px;
+    z-index:8;
+    background:rgba(255,255,255,.95);
+    border:1px solid #e3e3e3;
+    border-radius:10px;
+    padding:8px 10px;
+    min-width:190px;
+    max-width:260px;
+    box-shadow:0 8px 18px rgba(0,0,0,.12);
+    font-size:12px;
+    display:none;
+  }
+  .territories-legend .legend-title{
+    font-weight:700;
+    margin-bottom:6px;
+  }
+  .territories-legend .legend-item{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin:4px 0;
+  }
+  .territories-legend .swatch{
+    width:10px;
+    height:10px;
+    border-radius:999px;
+    border:1px solid rgba(0,0,0,.2);
+    flex:0 0 auto;
+  }

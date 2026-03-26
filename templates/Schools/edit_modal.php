@@ -72,7 +72,14 @@ $statusOptions = [
         'empty' => '-- Seleccione estatus --',
       ]) ?>
 
-      <?= $this->Form->control('editorial_actual') ?>
+      <?= $this->Form->control('editorial_actual', [
+        'label' => 'Tipo Compras',
+        'type' => 'select',
+        'options' => [
+            'Campo formativo' => 'Campo formativo',
+            'Integrados' => 'Integrados',
+            'Sistemas educativos' => 'Sistemas educativos'],
+        'empty' => '-- Seleccione Tipo de compra --']) ?>
       <?= $this->Form->control('competencia') ?>
       <?= $this->Form->control('presupuesto') ?>
 
@@ -110,8 +117,8 @@ $statusOptions = [
 <style>
 
 .modal-school-edit {
-  background: #e9e1e1;
-  border: 1px solid #d8c8c8;
+  background:rgb(255, 252, 252);
+  border: 1px solidrgb(255, 255, 255);
   border-radius: 16px;
 }
 
@@ -142,10 +149,10 @@ $statusOptions = [
 }
 
 .modal-panel {
-  border: 1px solid #d9c9c9;
+  border: 1px solidrgb(255, 255, 255);
   border-radius: 14px;
   padding: 14px;
-  background: #e9e1e1;
+  background:rgb(255, 255, 255);
 }
 
 .modal-tab-panel {

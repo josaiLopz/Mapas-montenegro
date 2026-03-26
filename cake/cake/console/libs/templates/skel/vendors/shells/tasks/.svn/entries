@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="5055"
+   name=""
+   committed-date="2007-05-12T20:00:55.024528Z"
+   url="https://svn.cakephp.org/repo/branches/1.2.x.x/cake/console/libs/templates/skel/vendors/shells/tasks"
+   last-author="phpnut"
+   kind="dir"
+   uuid="3807eeeb-6ff5-0310-8944-8be069107fe0"
+   repos="https://svn.cakephp.org/repo"
+   revision="6311"/>
+<entry
+   committed-rev="5049"
+   name="empty"
+   text-time="2008-01-17T17:20:27.000000Z"
+   committed-date="2007-05-12T18:20:38.417719Z"
+   checksum="d41d8cd98f00b204e9800998ecf8427e"
+   last-author="phpnut"
+   kind="file"
+   prop-time="2008-01-17T17:20:27.000000Z"/>
+</wc-entries>

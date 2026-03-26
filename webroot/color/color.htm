@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>jQuery MiniColors</title>
+<link href="color%20Archivos/jqueryscripttop.css" rel="stylesheet" type="text/css">
+  <!-- jQuery -->
+  <script src="color%20Archivos/f_006.txt"></script><script src="color%20Archivos/f_005.txt"></script><script type="text/javascript" async="" src="color%20Archivos/ga.js"></script><script src="color%20Archivos/f_003.txt" id="google_shimpl"></script><script src="color%20Archivos/jquery-1.12.4.min.js"></script>
+
+  <!-- Bootstrap 3 -->
+  <link rel="stylesheet" href="color%20Archivos/bootstrap.min.css">
+
+  <!-- MiniColors -->
+  <script src="color%20Archivos/jquery.minicolors.js"></script>
+  <link rel="stylesheet" href="color%20Archivos/jquery.minicolors.css">
+
+  <style>
+  body { background-color:#fafafa;}
+    dl {
+      margin: 20px 0;
+    }
+    dt {
+      font-size: 120%;
+    }
+    dd {
+      padding: 10px 20px 20px 20px;
+    }
+    dd:last-child {
+      border-bottom: none;
+    }
+    code {
+      color: black;
+      border: none;
+      background: rgba(128, 128, 128, .1);
+    }
+    pre {
+      background: #f8f8f8;
+      border: none;
+      color: #333;
+      padding: 20px;
+    }
+    h2 {
+      margin-top: 50px;
+    }
+    h3 {
+      color: #aaa;
+    }
+    .jumbotron {
+      padding: 40px;
+    }
+    .jumbotron h1 {
+      margin-top: 0;
+    }
+    .jumbotron p:last-child {
+      margin-bottom: 0;
+    }
+  </style>
+
+  <script>
+    $(document).ready( function() {
+
+      $('.demo').each( function() {
+        //
+        // Dear reader, it's actually very easy to initialize MiniColors. For example:
+        //
+        //  $(selector).minicolors();
+        //
+        // The way I've done it below is just for the demo, so don't get confused
+        // by it. Also, data- attributes aren't supported at this time...they're
+        // only used for this demo.
+        //
+        $(this).minicolors({
+          control: $(this).attr('data-control') || 'hue',
+          defaultValue: $(this).attr('data-defaultValue') || '',
+          format: $(this).attr('data-format') || 'hex',
+          keywords: $(this).attr('data-keywords') || '',
+          inline: $(this).attr('data-inline') === 'true',
+          letterCase: $(this).attr('data-letterCase') || 'lowercase',
+          opacity: $(this).attr('data-opacity'),
+          position: $(this).attr('data-position') || 'bottom left',
+          swatches: $(this).attr('data-swatches') ? $(this).attr('data-swatches').split('|') : [],
+          change: function(value, opacity) {
+            if( !value ) return;
+            if( opacity ) value += ', ' + opacity;
+            if( typeof console === 'object' ) {
+              console.log(value);
+            }
+          },
+          theme: 'bootstrap'
+        });
+
+      });
+
+    });
+  </script>
+<meta http-equiv="origin-trial" content="A0VQgOQvA+kwCj319NCwgf8+syUgEQ8/LLpB8RxxlRC3AkJ9xx8IAvVuQ/dcwy0ok7sGKufLLu6WhsXbQR9/UwwAAACFeyJvcmlnaW4iOiJodHRwczovL2RvdWJsZWNsaWNrLm5ldDo0NDMiLCJmZWF0dXJlIjoiUHJpdmFjeVNhbmRib3hBZHNBUElzIiwiZXhwaXJ5IjoxNjg4MDgzMTk5LCJpc1N1YmRvbWFpbiI6dHJ1ZSwiaXNUaGlyZFBhcnR5Ijp0cnVlfQ=="><meta http-equiv="origin-trial" content="A6kRo9zXJhOvsR4D/VeZ9CiApPAxnOGzBkW88d8eIt9ex2oOzlX+AoUk/BS50Y9Ysy2jwyHR49Mb7XwP+l9yygIAAACLeyJvcmlnaW4iOiJodHRwczovL2dvb2dsZXN5bmRpY2F0aW9uLmNvbTo0NDMiLCJmZWF0dXJlIjoiUHJpdmFjeVNhbmRib3hBZHNBUElzIiwiZXhwaXJ5IjoxNjg4MDgzMTk5LCJpc1N1YmRvbWFpbiI6dHJ1ZSwiaXNUaGlyZFBhcnR5Ijp0cnVlfQ=="><meta http-equiv="origin-trial" content="A3mbHZoS4VJtJ8j1aE8+Z9vaGf/oMV1eTNIWMrvGqWgNnOmvaxnRGliqKIZU2eiTzCj5Qpz8B1/UTTLuony5bAAAAACLeyJvcmlnaW4iOiJodHRwczovL2dvb2dsZXRhZ3NlcnZpY2VzLmNvbTo0NDMiLCJmZWF0dXJlIjoiUHJpdmFjeVNhbmRib3hBZHNBUElzIiwiZXhwaXJ5IjoxNjg4MDgzMTk5LCJpc1N1YmRvbWFpbiI6dHJ1ZSwiaXNUaGlyZFBhcnR5Ijp0cnVlfQ=="><meta http-equiv="origin-trial" content="As0hBNJ8h++fNYlkq8cTye2qDLyom8NddByiVytXGGD0YVE+2CEuTCpqXMDxdhOMILKoaiaYifwEvCRlJ/9GcQ8AAAB8eyJvcmlnaW4iOiJodHRwczovL2RvdWJsZWNsaWNrLm5ldDo0NDMiLCJmZWF0dXJlIjoiV2ViVmlld1hSZXF1ZXN0ZWRXaXRoRGVwcmVjYXRpb24iLCJleHBpcnkiOjE3MTk1MzI3OTksImlzU3ViZG9tYWluIjp0cnVlfQ=="><meta http-equiv="origin-trial" content="AgRYsXo24ypxC89CJanC+JgEmraCCBebKl8ZmG7Tj5oJNx0cmH0NtNRZs3NB5ubhpbX/bIt7l2zJOSyO64NGmwMAAACCeyJvcmlnaW4iOiJodHRwczovL2dvb2dsZXN5bmRpY2F0aW9uLmNvbTo0NDMiLCJmZWF0dXJlIjoiV2ViVmlld1hSZXF1ZXN0ZWRXaXRoRGVwcmVjYXRpb24iLCJleHBpcnkiOjE3MTk1MzI3OTksImlzU3ViZG9tYWluIjp0cnVlfQ=="><link rel="preload" href="color%20Archivos/f_002.txt" as="script"><script type="text/javascript" src="color%20Archivos/f_002.txt"></script><link rel="preload" href="color%20Archivos/f_004.txt" as="script"><script type="text/javascript" src="color%20Archivos/f_004.txt"></script><meta http-equiv="origin-trial" content="A0VQgOQvA+kwCj319NCwgf8+syUgEQ8/LLpB8RxxlRC3AkJ9xx8IAvVuQ/dcwy0ok7sGKufLLu6WhsXbQR9/UwwAAACFeyJvcmlnaW4iOiJodHRwczovL2RvdWJsZWNsaWNrLm5ldDo0NDMiLCJmZWF0dXJlIjoiUHJpdmFjeVNhbmRib3hBZHNBUElzIiwiZXhwaXJ5IjoxNjg4MDgzMTk5LCJpc1N1YmRvbWFpbiI6dHJ1ZSwiaXNUaGlyZFBhcnR5Ijp0cnVlfQ=="><meta http-equiv="origin-trial" content="A6kRo9zXJhOvsR4D/VeZ9CiApPAxnOGzBkW88d8eIt9ex2oOzlX+AoUk/BS50Y9Ysy2jwyHR49Mb7XwP+l9yygIAAACLeyJvcmlnaW4iOiJodHRwczovL2dvb2dsZXN5bmRpY2F0aW9uLmNvbTo0NDMiLCJmZWF0dXJlIjoiUHJpdmFjeVNhbmRib3hBZHNBUElzIiwiZXhwaXJ5IjoxNjg4MDgzMTk5LCJpc1N1YmRvbWFpbiI6dHJ1ZSwiaXNUaGlyZFBhcnR5Ijp0cnVlfQ=="><meta http-equiv="origin-trial" content="A3mbHZoS4VJtJ8j1aE8+Z9vaGf/oMV1eTNIWMrvGqWgNnOmvaxnRGliqKIZU2eiTzCj5Qpz8B1/UTTLuony5bAAAAACLeyJvcmlnaW4iOiJodHRwczovL2dvb2dsZXRhZ3NlcnZpY2VzLmNvbTo0NDMiLCJmZWF0dXJlIjoiUHJpdmFjeVNhbmRib3hBZHNBUElzIiwiZXhwaXJ5IjoxNjg4MDgzMTk5LCJpc1N1YmRvbWFpbiI6dHJ1ZSwiaXNUaGlyZFBhcnR5Ijp0cnVlfQ=="><meta http-equiv="origin-trial" content="As0hBNJ8h++fNYlkq8cTye2qDLyom8NddByiVytXGGD0YVE+2CEuTCpqXMDxdhOMILKoaiaYifwEvCRlJ/9GcQ8AAAB8eyJvcmlnaW4iOiJodHRwczovL2RvdWJsZWNsaWNrLm5ldDo0NDMiLCJmZWF0dXJlIjoiV2ViVmlld1hSZXF1ZXN0ZWRXaXRoRGVwcmVjYXRpb24iLCJleHBpcnkiOjE3MTk1MzI3OTksImlzU3ViZG9tYWluIjp0cnVlfQ=="><meta http-equiv="origin-trial" content="AgRYsXo24ypxC89CJanC+JgEmraCCBebKl8ZmG7Tj5oJNx0cmH0NtNRZs3NB5ubhpbX/bIt7l2zJOSyO64NGmwMAAACCeyJvcmlnaW4iOiJodHRwczovL2dvb2dsZXN5bmRpY2F0aW9uLmNvbTo0NDMiLCJmZWF0dXJlIjoiV2ViVmlld1hSZXF1ZXN0ZWRXaXRoRGVwcmVjYXRpb24iLCJleHBpcnkiOjE3MTk1MzI3OTksImlzU3ViZG9tYWluIjp0cnVlfQ=="><link rel="preload" href="color%20Archivos/f_002.txt" as="script"><script type="text/javascript" src="color%20Archivos/f_002.txt"></script><link rel="preload" href="color%20Archivos/f_004.txt" as="script"><script type="text/javascript" src="color%20Archivos/f_004.txt"></script></head>
+<body>
+<div id="jquery-script-menu">
+<div class="jquery-script-center">
+<ul>
+<li><a href="https://www.jqueryscript.net/other/Color-Picker-Plugin-jQuery-MiniColors.html">Download This Plugin</a></li>
+<li><a href="https://www.jqueryscript.net/">Back To jQueryScript.Net</a></li>
+</ul>
+<div class="jquery-script-ads"><script type="text/javascript"><!--
+google_ad_client = "ca-pub-2783044520727903";
+/* jQuery_demo */
+google_ad_slot = "2780937993";
+google_ad_width = 728;
+google_ad_height = 90;
+//-->
+</script>
+<script type="text/javascript" src="color%20Archivos/f.txt">
+</script><div id="aswift_0_host" style="border:none;margin:0;padding:0;position:relative;visibility:visible;background-color:transparent;display:inline-block;width:728px;height:90px;" data-ad-slot="2780937993" tabindex="0" title="Advertisement" aria-label="Advertisement" data-ad-status="filled"><iframe id="aswift_0" name="aswift_0" style="left:0;position:absolute;top:0;border:0;width:728px;height:90px;" sandbox="allow-forms allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" src="color%20Archivos/ads.htm" data-google-container-id="a!1" data-google-query-id="CIz09Ou3jv4CFRArvQodDs8NWQ" data-load-complete="true" width="728" height="90" frameborder="0"></iframe></div></div>
+<div class="jquery-script-clear"></div>
+</div>
+</div>
+  <div class="container" style="margin: 150px auto;">
+    <div class="col-12">
+
+      <!-- Intro -->
+      <div id="intro" class="jumbotron">
+        <h1>jQuery MiniColors Plugin Example</h1>
+       
+      </div>
+
+      <!-- Control types -->
+      <h3>Control Types</h3>
+      <div class="well">
+        <div class="row">
+          <div class="col-lg-4 col-sm-4 col-12">
+
+            <div class="form-group">
+              <label for="hue-demo">Hue (default)</label>
+              <div class="minicolors minicolors-theme-bootstrap minicolors-position-bottom minicolors-position-left"><input type="text" id="hue-demo" class="form-control demo minicolors-input" data-control="hue" value="#ff6161" size="7"><span class="minicolors-swatch minicolors-sprite minicolors-input-swatch"><span class="minicolors-swatch-color" style="background-color: rgb(255, 97, 97);"></span></span><div class="minicolors-panel minicolors-slider-hue"><div class="minicolors-slider minicolors-sprite"><div class="minicolors-picker" style="top: 150px;"></div></div><div class="minicolors-opacity-slider minicolors-sprite"><div class="minicolors-picker"></div></div><div class="minicolors-grid minicolors-sprite" style="background-color: rgb(255, 0, 0);"><div class="minicolors-grid-inner"></div><div class="minicolors-picker" style="top: 0px; left: 93px;"><div></div></div></div></div></div>
+            </div>
+            <div class="form-group">
+              <label for="saturation-demo">Saturation</label>
+              <div class="minicolors minicolors-theme-bootstrap minicolors-position-bottom minicolors-position-left"><input type="text" id="saturation-demo" class="form-control demo minicolors-input" data-control="saturation" value="#0088cc" size="7"><span class="minicolors-swatch minicolors-sprite minicolors-input-swatch"><span class="minicolors-swatch-color" style="background-color: rgb(0, 136, 204);"></span></span><div class="minicolors-panel minicolors-slider-saturation"><div class="minicolors-slider minicolors-sprite" style="background-color: rgb(0, 136, 204);"><div class="minicolors-picker" style="top: 0px;"></div></div><div class="minicolors-opacity-slider minicolors-sprite"><div class="minicolors-picker"></div></div><div class="minicolors-grid minicolors-sprite"><div class="minicolors-grid-inner" style="opacity: 1;"></div><div class="minicolors-picker" style="top: 30px; left: 83.3333px;"><div></div></div></div></div></div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-sm-4 col-12">
+            <div class="form-group">
+              <label for="brightness-demo">Brightness</label>
+              <div class="minicolors minicolors-theme-bootstrap minicolors-position-bottom minicolors-position-left"><input type="text" id="brightness-demo" class="form-control demo minicolors-input" data-control="brightness" value="#00ffff" size="7"><span class="minicolors-swatch minicolors-sprite minicolors-input-swatch"><span class="minicolors-swatch-color" style="background-color: rgb(0, 255, 255);"></span></span><div class="minicolors-panel minicolors-slider-brightness"><div class="minicolors-slider minicolors-sprite" style="background-color: rgb(0, 255, 255);"><div class="minicolors-picker" style="top: 0px;"></div></div><div class="minicolors-opacity-slider minicolors-sprite"><div class="minicolors-picker"></div></div><div class="minicolors-grid minicolors-sprite"><div class="minicolors-grid-inner" style="opacity: 0;"></div><div class="minicolors-picker" style="top: 0px; left: 75px;"><div></div></div></div></div></div>
+            </div>
+            <div class="form-group">
+              <label for="wheel-demo">Wheel</label>
+              <div class="minicolors minicolors-theme-bootstrap minicolors-position-bottom minicolors-position-left"><input type="text" id="wheel-demo" class="form-control demo minicolors-input" data-control="wheel" value="#ff99ee" size="7"><span class="minicolors-swatch minicolors-sprite minicolors-input-swatch"><span class="minicolors-swatch-color" style="background-color: rgb(255, 153, 238);"></span></span><div class="minicolors-panel minicolors-slider-wheel"><div class="minicolors-slider minicolors-sprite" style="background-color: rgb(255, 153, 238);"><div class="minicolors-picker" style="top: 0px;"></div></div><div class="minicolors-opacity-slider minicolors-sprite"><div class="minicolors-picker"></div></div><div class="minicolors-grid minicolors-sprite"><div class="minicolors-grid-inner"></div><div class="minicolors-picker" style="top: 97.9813px; left: 55.7164px;"><div></div></div></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input modes -->
+      <h3>Input Modes</h3>
+      <div class="well">
+        <div class="row">
+          <div class="col-lg-4 col-sm-4 col-12">
+            <div class="form-group">
+              <label for="text-field">Text field</label>
+              <br>
+              <div class="minicolors minicolors-theme-bootstrap minicolors-position-bottom minicolors-position-left"><input type="text" id="text-field" class="form-control demo minicolors-input" value="#70c24a" size="7"><span class="minicolors-swatch minicolors-sprite minicolors-input-swatch"><span class="minicolors-swatch-color" style="background-color: rgb(112, 194, 74);"></span></span><div class="minicolors-panel minicolors-slider-hue"><div class="minicolors-slider minicolors-sprite"><div class="minicolors-picker" style="top: 107.917px;"></div></div><div class="minicolors-opacity-slider minicolors-sprite"><div class="minicolors-picker"></div></div><div class="minicolors-grid minicolors-sprite" style="background-color: rgb(81, 255, 0);"><div class="minicolors-grid-inner"></div><div class="minicolors-picker" style="top: 35px; left: 93px;"><div></div></div></div></div></div>
+            </div>
+            <div class="form-group">
+              <label for="hidden-input">Hidden Input</label>
+              <br>
+              <div class="minicolors minicolors-theme-bootstrap minicolors-position-bottom minicolors-position-left"><input type="hidden" id="hidden-input" class="demo minicolors-input" value="#db913d" size="7"><span class="minicolors-swatch minicolors-sprite minicolors-input-swatch"><span class="minicolors-swatch-color" style="background-color: rgb(219, 145, 61);"></span></span><div class="minicolors-panel minicolors-slider-hue"><div class="minicolors-slider minicolors-sprite"><div class="minicolors-picker" style="top: 136.709px;"></div></div><div class="minicolors-opacity-slider minicolors-sprite"><div class="minicolors-picker"></div></div><div class="minicolors-grid minicolors-sprite" style="background-color: rgb(255, 136, 0);"><div class="minicolors-grid-inner"></div><div class="minicolors-picker" style="top: 21px; left: 109px;"><div></div></div></div></div></div>
+            </div>
+          </div>
+          <div class="col-lg-4 col-sm-4 col-12">
+            <div class="form-group">
+              <label for="inline">Inline</label>
+              <br>
+              <div class="minicolors minicolors-theme-bootstrap minicolors-position-bottom minicolors-position-left minicolors-inline"><input type="text" id="inline" class="form-control demo minicolors-input" data-inline="true" value="#4fc8db" size="7"><div class="minicolors-panel minicolors-slider-hue"><div class="minicolors-slider minicolors-sprite"><div class="minicolors-picker" style="top: 71.6071px;"></div></div><div class="minicolors-opacity-slider minicolors-sprite"><div class="minicolors-picker"></div></div><div class="minicolors-grid minicolors-sprite" style="background-color: rgb(0, 221, 255);"><div class="minicolors-grid-inner"></div><div class="minicolors-picker" style="top: 21px; left: 96px;"><div></div></div></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Positions -->
+      <h3>Positions</h3>
+      <div class="well">
+        <p>
+          Valid positions include <code>bottom left</code>, <code>bottom right</code>, <code>top
+          left</code>, and <code>top right</code>.
+        </p>
+        <div class="row">
+          <div class="col-lg-4 col-sm-4 col-12">
+            <div class="form-group">
+              <label for="position-bottom-left">bottom left (default)</label>
+              <div class="minicolors minicolors-theme-bootstrap minicolors-position-bottom minicolors-position-left"><input type="text" id="position-bottom-left" class="form-control demo minicolors-input" data-position="bottom left" value="#0088cc" size="7"><span class="minicolors-swatch minicolors-sprite minicolors-input-swatch"><span class="minicolors-swatch-color" style="background-color: rgb(0, 136, 204);"></span></span><div class="minicolors-panel minicolors-slider-hue"><div class="minicolors-slider minicolors-sprite"><div class="minicolors-picker" style="top: 66.6667px;"></div></div><div class="minicolors-opacity-slider minicolors-sprite"><div class="minicolors-picker"></div></div><div class="minicolors-grid minicolors-sprite" style="background-color: rgb(0, 170, 255);"><div class="minicolors-grid-inner"></div><div class="minicolors-picker" style="top: 30px; left: 150px;"><div></div></div></div></div></div>
+            </div>
+            <div class="form-group">
+              <label for="position-top-left">top left</label>
+              <div class="minicolors minicolors-theme-bootstrap minicolors-position-top minicolors-position-left"><input type="text" id="position-top-left" class="form-control demo minicolors-input" data-position="top left" value="#0088cc" size="7"><span class="minicolors-swatch minicolors-sprite minicolors-input-swatch"><span class="minicolors-swatch-color" style="background-color: rgb(0, 136, 204);"></span></span><div class="minicolors-panel minicolors-slider-hue"><div class="minicolors-slider minicolors-sprite"><div class="minicolors-picker" style="top: 66.6667px;"></div></div><div class="minicolors-opacity-slider minicolors-sprite"><div class="minicolors-picker"></div></div><div class="minicolors-grid minicolors-sprite" style="background-color: rgb(0, 170, 255);"><div class="minicolors-grid-inner"></div><div class="minicolors-picker" style="top: 30px; left: 150px;"><div></div></div></div></div></div>
+            </div>
+          </div>
+          <div class="col-lg-4 col-sm-4 col-12">
+            <div class="form-group">
+              <label for="position-bottom-right">bottom right</label>
+              <div class="minicolors minicolors-theme-bootstrap minicolors-position-bottom minicolors-position-right"><input type="text" id="position-bottom-right" class="form-control demo minicolors-input" data-position="bottom right" value="#0088cc" size="7"><span class="minicolors-swatch minicolors-sprite minicolors-input-swatch"><span class="minicolors-swatch-color" style="background-color: rgb(0, 136, 204);"></span></span><div class="minicolors-panel minicolors-slider-hue"><div class="minicolors-slider minicolors-sprite"><div class="minicolors-picker" style="top: 66.6667px;"></div></div><div class="minicolors-opacity-slider minicolors-sprite"><div class="minicolors-picker"></div></div><div class="minicolors-grid minicolors-sprite" style="background-color: rgb(0, 170, 255);"><div class="minicolors-grid-inner"></div><div class="minicolors-picker" style="top: 30px; left: 150px;"><div></div></div></div></div></div>
+            </div>
+            <div class="form-group">
+              <label for="position-top-right">top right</label>
+              <div class="minicolors minicolors-theme-bootstrap minicolors-position-top minicolors-position-right"><input type="text" id="position-top-right" class="form-control demo minicolors-input" data-position="top right" value="#0088cc" size="7"><span class="minicolors-swatch minicolors-sprite minicolors-input-swatch"><span class="minicolors-swatch-color" style="background-color: rgb(0, 136, 204);"></span></span><div class="minicolors-panel minicolors-slider-hue"><div class="minicolors-slider minicolors-sprite"><div class="minicolors-picker" style="top: 66.6667px;"></div></div><div class="minicolors-opacity-slider minicolors-sprite"><div class="minicolors-picker"></div></div><div class="minicolors-grid minicolors-sprite" style="background-color: rgb(0, 170, 255);"><div class="minicolors-grid-inner"></div><div class="minicolors-picker" style="top: 30px; left: 150px;"><div></div></div></div></div></div>
+            </div>
+          </div>
+          <div class="col-lg-4 col-sm-4 col-12">
+          </div>
+        </div>
+      </div>
+
+      <!-- RGB(A) -->
+      <h3>RGB(A)</h3>
+      <div class="well">
+        <div class="row">
+          <div class="col-lg-4 col-sm-4 col-12">
+            <div class="form-group">
+              <label for="rgb">RGB</label>
+              <br>
+              <div class="minicolors minicolors-theme-bootstrap minicolors-position-bottom minicolors-position-left"><input type="text" id="rgb" class="form-control demo minicolors-input" data-format="rgb" value="rgb(33, 147, 58)" size="20" data-opacity="1.00"><span class="minicolors-swatch minicolors-sprite minicolors-input-swatch"><span class="minicolors-swatch-color" style="background-color: rgb(33, 147, 58);"></span></span><div class="minicolors-panel minicolors-slider-hue"><div class="minicolors-slider minicolors-sprite"><div class="minicolors-picker" style="top: 94.5176px;"></div></div><div class="minicolors-opacity-slider minicolors-sprite"><div class="minicolors-picker"></div></div><div class="minicolors-grid minicolors-sprite" style="background-color: rgb(0, 255, 55);"><div class="minicolors-grid-inner"></div><div class="minicolors-picker" style="top: 63px; left: 117px;"><div></div></div></div></div></div>
+              <span class="help-block">
+                RGB input can be assigned by setting the <code>format</code> option
+                to <code>rgb</code>.
+              </span>
+            </div>
+          </div>
+          <div class="col-lg-4 col-sm-4 col-12">
+            <div class="form-group">
+              <label for="rgba">RGBA</label>
+              <br>
+              <div class="minicolors minicolors-theme-bootstrap minicolors-with-opacity minicolors-position-bottom minicolors-position-left"><input type="text" id="rgba" class="form-control demo minicolors-input" data-format="rgb" data-opacity="0.50" value="rgba(52, 64, 158, 0.5)" size="25"><span class="minicolors-swatch minicolors-sprite minicolors-input-swatch"><span class="minicolors-swatch-color" style="opacity: 0.5; background-color: rgb(52, 64, 158);"></span></span><div class="minicolors-panel minicolors-slider-hue"><div class="minicolors-slider minicolors-sprite"><div class="minicolors-picker" style="top: 52.8302px;"></div></div><div class="minicolors-opacity-slider minicolors-sprite"><div class="minicolors-picker" style="top: 75px;"></div></div><div class="minicolors-grid minicolors-sprite" style="background-color: rgb(0, 30, 255);"><div class="minicolors-grid-inner"></div><div class="minicolors-picker" style="top: 57px; left: 101px;"><div></div></div></div></div></div>
+              <span class="help-block">
+                RGBA input can be assigned by setting the <code>format</code>
+                option to <code>rgb</code> and <code>opacity</code> option to
+                <code>true</code>.
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- and more -->
+      <h3>…and more!</h3>
+      <div class="well">
+        <div class="row">
+          <div class="col-lg-4 col-sm-4 col-12">
+            <div class="form-group">
+              <label for="opacity">Opacity</label>
+              <br>
+              <div class="minicolors minicolors-theme-bootstrap minicolors-with-opacity minicolors-position-bottom minicolors-position-left"><input type="text" id="opacity" class="form-control demo minicolors-input" data-opacity="0.50" value="#766fa8" size="7"><span class="minicolors-swatch minicolors-sprite minicolors-input-swatch"><span class="minicolors-swatch-color" style="opacity: 0.5; background-color: rgb(118, 111, 168);"></span></span><div class="minicolors-panel minicolors-slider-hue"><div class="minicolors-slider minicolors-sprite"><div class="minicolors-picker" style="top: 46.9298px;"></div></div><div class="minicolors-opacity-slider minicolors-sprite"><div class="minicolors-picker" style="top: 75px;"></div></div><div class="minicolors-grid minicolors-sprite" style="background-color: rgb(30, 0, 255);"><div class="minicolors-grid-inner"></div><div class="minicolors-picker" style="top: 51px; left: 51px;"><div></div></div></div></div></div>
+              <span class="help-block">
+                Opacity can be assigned by including the <code>data-opacity</code>
+                attribute or by setting the <code>opacity</code> option to
+                <code>true</code>.
+              </span>
+            </div>
+          </div>
+          <div class="col-lg-4 col-sm-4 col-12">
+            <div class="form-group">
+              <label for="keywords">Keywords</label>
+              <br>
+              <div class="minicolors minicolors-theme-bootstrap minicolors-position-bottom minicolors-position-left"><input type="text" id="keywords" class="form-control demo minicolors-input" data-keywords="transparent, initial, inherit" value="transparent" size="11"><span class="minicolors-swatch minicolors-sprite minicolors-input-swatch"><span class="minicolors-swatch-color" style="opacity: 0;"></span></span><div class="minicolors-panel minicolors-slider-hue"><div class="minicolors-slider minicolors-sprite"><div class="minicolors-picker" style="top: 0px;"></div></div><div class="minicolors-opacity-slider minicolors-sprite"><div class="minicolors-picker"></div></div><div class="minicolors-grid minicolors-sprite" style="background-color: rgb(255, 0, 0);"><div class="minicolors-grid-inner"></div><div class="minicolors-picker" style="top: 150px; left: 0px;"><div></div></div></div></div></div>
+              <span class="help-block">
+                CSS-wide keywords can be assigned by setting the <code>keywords</code>
+                option to a comma-separated list of valid keywords: <code>transparent,
+                initial, inherit</code>.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-lg-4 col-sm-4 col-12">
+            <div class="form-group">
+              <label for="default-value">Default Value</label>
+              <br>
+              <div class="minicolors minicolors-theme-bootstrap minicolors-position-bottom minicolors-position-left"><input type="text" id="default-value" class="form-control demo minicolors-input" data-defaultvalue="#ff6600" size="7" value="#ff6600"><span class="minicolors-swatch minicolors-sprite minicolors-input-swatch"><span class="minicolors-swatch-color" style="background-color: rgb(255, 102, 0);"></span></span><div class="minicolors-panel minicolors-slider-hue"><div class="minicolors-slider minicolors-sprite"><div class="minicolors-picker" style="top: 140px;"></div></div><div class="minicolors-opacity-slider minicolors-sprite"><div class="minicolors-picker"></div></div><div class="minicolors-grid minicolors-sprite" style="background-color: rgb(255, 102, 0);"><div class="minicolors-grid-inner"></div><div class="minicolors-picker" style="top: 0px; left: 150px;"><div></div></div></div></div></div>
+              <span class="help-block">
+                This field has a default value assigned to it, so it will never be empty.
+              </span>
+            </div>
+          </div>
+          <div class="col-lg-4 col-sm-4 col-12">
+            <div class="form-group">
+              <label for="letter-case">Letter Case</label>
+              <br>
+              <div class="minicolors minicolors-theme-bootstrap minicolors-position-bottom minicolors-position-left"><input type="text" id="letter-case" class="form-control demo minicolors-input" data-lettercase="uppercase" value="#ABCDEF" size="7"><span class="minicolors-swatch minicolors-sprite minicolors-input-swatch"><span class="minicolors-swatch-color" style="background-color: rgb(171, 205, 239);"></span></span><div class="minicolors-panel minicolors-slider-hue"><div class="minicolors-slider minicolors-sprite"><div class="minicolors-picker" style="top: 62.5px;"></div></div><div class="minicolors-opacity-slider minicolors-sprite"><div class="minicolors-picker"></div></div><div class="minicolors-grid minicolors-sprite" style="background-color: rgb(0, 128, 255);"><div class="minicolors-grid-inner"></div><div class="minicolors-picker" style="top: 9px; left: 43px;"><div></div></div></div></div></div>
+              <span class="help-block">
+                This field will always be uppercase.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-lg-4 col-sm-4 col-12">
+            <div class="form-group">
+              <label for="input-group">Input Groups</label>
+              <div class="input-group">
+                <div class="minicolors minicolors-theme-bootstrap minicolors-position-bottom minicolors-position-left"><input type="text" id="input-group" class="form-control demo minicolors-input" value="#ff0000" size="7"><span class="minicolors-swatch minicolors-sprite minicolors-input-swatch"><span class="minicolors-swatch-color" style="background-color: rgb(255, 0, 0);"></span></span><div class="minicolors-panel minicolors-slider-hue"><div class="minicolors-slider minicolors-sprite"><div class="minicolors-picker" style="top: 150px;"></div></div><div class="minicolors-opacity-slider minicolors-sprite"><div class="minicolors-picker"></div></div><div class="minicolors-grid minicolors-sprite" style="background-color: rgb(255, 0, 0);"><div class="minicolors-grid-inner"></div><div class="minicolors-picker" style="top: 0px; left: 150px;"><div></div></div></div></div></div>
+                <span class="input-group-btn">
+                  <button class="btn btn-default" type="button">Button</button>
+                </span>
+              </div>
+              <span class="help-block">
+                Example using Bootstrap's input groups.
+              </span>
+            </div>
+          </div>
+          <div class="col-lg-4 col-sm-4 col-12">
+            <div class="form-group">
+              <label for="more-input-group">More Input Groups</label>
+              <div class="input-group">
+                <span class="input-group-addon">Color</span>
+                <div class="minicolors minicolors-theme-bootstrap minicolors-position-bottom minicolors-position-left"><input type="text" id="more-input-group" class="form-control demo minicolors-input" value="#ff0000" size="7"><span class="minicolors-swatch minicolors-sprite minicolors-input-swatch"><span class="minicolors-swatch-color" style="background-color: rgb(255, 0, 0);"></span></span><div class="minicolors-panel minicolors-slider-hue"><div class="minicolors-slider minicolors-sprite"><div class="minicolors-picker" style="top: 150px;"></div></div><div class="minicolors-opacity-slider minicolors-sprite"><div class="minicolors-picker"></div></div><div class="minicolors-grid minicolors-sprite" style="background-color: rgb(255, 0, 0);"><div class="minicolors-grid-inner"></div><div class="minicolors-picker" style="top: 0px; left: 150px;"><div></div></div></div></div></div>
+                <span class="input-group-btn">
+                  <button class="btn btn-default" type="button">Button</button>
+                </span>
+              </div>
+              <span class="help-block">
+                Input group example with addon.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-lg-4 col-sm-4 col-12">
+            <div class="form-group">
+              <label for="letter-case">Swatches</label>
+              <br>
+              <div class="minicolors minicolors-theme-bootstrap minicolors-position-bottom minicolors-position-left"><input type="text" id="swatches" class="form-control demo minicolors-input" data-swatches="#ef9a9a|#90caf9|#a5d6a7|#fff59d|#ffcc80|#bcaaa4|#eeeeee|#f44336|#2196f3|#4caf50|#ffeb3b|#ff9800|#795548|#9e9e9e" value="#abcdef" size="7"><span class="minicolors-swatch minicolors-sprite minicolors-input-swatch"><span class="minicolors-swatch-color" style="background-color: rgb(171, 205, 239);"></span></span><div class="minicolors-panel minicolors-slider-hue minicolors-with-swatches"><div class="minicolors-slider minicolors-sprite"><div class="minicolors-picker" style="top: 62.5px;"></div></div><div class="minicolors-opacity-slider minicolors-sprite"><div class="minicolors-picker"></div></div><div class="minicolors-grid minicolors-sprite" style="background-color: rgb(0, 128, 255);"><div class="minicolors-grid-inner"></div><div class="minicolors-picker" style="top: 9px; left: 43px;"><div></div></div></div><ul class="minicolors-swatches"><li class="minicolors-swatch minicolors-sprite"><span class="minicolors-swatch-color" style="background-color: rgb(239, 154, 154);"></span></li><li class="minicolors-swatch minicolors-sprite"><span class="minicolors-swatch-color" style="background-color: rgb(144, 202, 249);"></span></li><li class="minicolors-swatch minicolors-sprite"><span class="minicolors-swatch-color" style="background-color: rgb(165, 214, 167);"></span></li><li class="minicolors-swatch minicolors-sprite"><span class="minicolors-swatch-color" style="background-color: rgb(255, 245, 157);"></span></li><li class="minicolors-swatch minicolors-sprite"><span class="minicolors-swatch-color" style="background-color: rgb(255, 204, 128);"></span></li><li class="minicolors-swatch minicolors-sprite"><span class="minicolors-swatch-color" style="background-color: rgb(188, 170, 164);"></span></li><li class="minicolors-swatch minicolors-sprite"><span class="minicolors-swatch-color" style="background-color: rgb(238, 238, 238);"></span></li><li class="minicolors-swatch minicolors-sprite"><span class="minicolors-swatch-color" style="background-color: rgb(244, 67, 54);"></span></li><li class="minicolors-swatch minicolors-sprite"><span class="minicolors-swatch-color" style="background-color: rgb(33, 150, 243);"></span></li><li class="minicolors-swatch minicolors-sprite"><span class="minicolors-swatch-color" style="background-color: rgb(76, 175, 80);"></span></li><li class="minicolors-swatch minicolors-sprite"><span class="minicolors-swatch-color" style="background-color: rgb(255, 235, 59);"></span></li><li class="minicolors-swatch minicolors-sprite"><span class="minicolors-swatch-color" style="background-color: rgb(255, 152, 0);"></span></li><li class="minicolors-swatch minicolors-sprite"><span class="minicolors-swatch-color" style="background-color: rgb(121, 85, 72);"></span></li><li class="minicolors-swatch minicolors-sprite"><span class="minicolors-swatch-color" style="background-color: rgb(158, 158, 158);"></span></li></ul></div></div>
+              <span class="help-block">
+                Example with swatches.
+              </span>
+            </div>
+          </div>
+          <div class="col-lg-4 col-sm-4 col-12">
+            <div class="form-group">
+              <label for="letter-case">Swatches and opacity</label>
+              <br>
+              <div class="minicolors minicolors-theme-bootstrap minicolors-with-opacity minicolors-position-bottom minicolors-position-left"><input type="text" id="swatches" class="form-control demo minicolors-input" data-format="rgb" data-opacity="0.50" data-swatches="#fff|#000|#f00|#0f0|#00f|#ff0|rgba(0,0,255,0.5)" value="rgba(14, 206, 235, 0.5)" size="25"><span class="minicolors-swatch minicolors-sprite minicolors-input-swatch"><span class="minicolors-swatch-color" style="opacity: 0.5; background-color: rgb(14, 206, 235);"></span></span><div class="minicolors-panel minicolors-slider-hue minicolors-with-swatches"><div class="minicolors-slider minicolors-sprite"><div class="minicolors-picker" style="top: 71.7195px;"></div></div><div class="minicolors-opacity-slider minicolors-sprite"><div class="minicolors-picker" style="top: 75px;"></div></div><div class="minicolors-grid minicolors-sprite" style="background-color: rgb(0, 221, 255);"><div class="minicolors-grid-inner"></div><div class="minicolors-picker" style="top: 11px; left: 142px;"><div></div></div></div><ul class="minicolors-swatches"><li class="minicolors-swatch minicolors-sprite"><span class="minicolors-swatch-color" style="background-color: rgb(255, 255, 255);"></span></li><li class="minicolors-swatch minicolors-sprite"><span class="minicolors-swatch-color" style="background-color: rgb(0, 0, 0);"></span></li><li class="minicolors-swatch minicolors-sprite"><span class="minicolors-swatch-color" style="background-color: rgb(255, 0, 0);"></span></li><li class="minicolors-swatch minicolors-sprite"><span class="minicolors-swatch-color" style="background-color: rgb(0, 255, 0);"></span></li><li class="minicolors-swatch minicolors-sprite"><span class="minicolors-swatch-color" style="background-color: rgb(0, 0, 255);"></span></li><li class="minicolors-swatch minicolors-sprite"><span class="minicolors-swatch-color" style="background-color: rgb(255, 255, 0);"></span></li><li class="minicolors-swatch minicolors-sprite"><span class="minicolors-swatch-color" style="background-color: rgb(0, 0, 255); opacity: 0.5;"></span></li></ul></div></div>
+              <span class="help-block">
+                Example with swatches and opacity.
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      
+
+      <h2 id="license">License</h2>
+      <p>
+        Licensed under the <a href="http://opensource.org/licenses/MIT">MIT license</a>,
+        same as <a href="https://jquery.org/license/">jQuery</a>.
+      </p>
+      <p>
+        ©2013 - 2017 <a href="http://www.abeautifulsite.net/" rel="nofollow" target="_blank">A Beautiful Site, LLC.</a>
+      </p>
+    </div>
+  </div>
+  <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-36251023-1']);
+  _gaq.push(['_setDomainName', 'jqueryscript.net']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+
+<ins class="adsbygoogle adsbygoogle-noablate" style="display: none !important;" data-adsbygoogle-status="done" data-ad-status="unfilled"><div id="aswift_1_host" style="border: medium none; height: 0px; width: 0px; margin: 0px; padding: 0px; position: relative; visibility: visible; background-color: transparent; display: inline-block;" tabindex="0" title="Advertisement" aria-label="Advertisement"><iframe id="aswift_1" name="aswift_1" style="left:0;position:absolute;top:0;border:0;width:undefinedpx;height:undefinedpx;" sandbox="allow-forms allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" src="color%20Archivos/ads_002.htm" data-google-container-id="a!2" data-load-complete="true" frameborder="0"></iframe></div></ins><iframe src="color%20Archivos/aframe.htm" style="display: none;" width="0" height="0"></iframe></body><iframe id="google_esf" name="google_esf" src="color%20Archivos/zrt_lookup.htm" style="display: none;"></iframe></html>

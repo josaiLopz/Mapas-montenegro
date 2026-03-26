@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="6296"
+   name=""
+   committed-date="2008-01-01T22:18:17.477495Z"
+   url="https://svn.cakephp.org/repo/branches/1.2.x.x/cake/console/libs/templates/skel/views/layouts/email"
+   last-author="phpnut"
+   kind="dir"
+   uuid="3807eeeb-6ff5-0310-8944-8be069107fe0"
+   repos="https://svn.cakephp.org/repo"
+   revision="6311"/>
+<entry
+   name="html"
+   kind="dir"/>
+<entry
+   name="text"
+   kind="dir"/>
+</wc-entries>

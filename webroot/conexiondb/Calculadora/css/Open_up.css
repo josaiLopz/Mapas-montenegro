@@ -1,0 +1,61 @@
+body{
+    background-image: url('../portadas/CALCULADORA-DE-DESCUENTOS_Serie-Entorno.jpg');
+    background-size: cover; /* Ajusta la imagen para cubrir todo el fondo */
+         background-repeat: no-repeat; /* Evita que la imagen se repita */
+         background-position: center center; /* Centra la imagen en el fondo */
+         background-attachment: fixed;
+     }
+     .input-container {
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         margin: 20px;
+         margin-left: 8%;
+     }
+
+     .navbar.hidden {
+         opacity: 0;
+         transition: opacity 0.5s ease;
+     }
+     .input-container label {
+         flex: 1; /* Ocupa todo el espacio posible */
+         margin-left: 20px;
+     }
+
+     .input-container input {
+         flex: 1; /* Ocupa todo el espacio posible */
+         margin-left: 10px; /* Margen entre el label y el input */
+         max-width: 150px; /* Ancho máximo del input */
+
+     }
+
+     p {
+     font-family: Arial, sans-serif;
+     font-size: 14px;
+     font-weight: bold; /* Texto en negrita */
+     color: #800020; /* Rojo vino */
+     margin-bottom: 10px;
+     text-align: left; /* Alineado a la izquierda */
+     margin-left: 10%;
+
+ }
+
+ /* Estilo para el texto dentro del <span> */
+ p span {
+     float: right; /* Alineado a la derecha */
+     font-size: 20px;
+     margin-right:11%;
+ }
+ .regresar-boton {
+         padding: 10px 20px;
+         font-size: 16px;
+         color: white;
+         background-color: #28a745;
+         border: none;
+         border-radius: 5px;
+         cursor: pointer;
+         margin-left: 90%;
+     }
+     .regresar-boton:hover {
+         background-color: #218838;
+     }

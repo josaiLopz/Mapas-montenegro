@@ -1,0 +1,819 @@
+<?php
+class BasesController extends AppController {
+
+	var $name = 'Bases';
+	var $helpers = array('Html', 'Form');
+	var $uses=array('Base','Escuela','Estado','Ruta');
+
+	function index(){
+		$distribuidores=$this->Escuela->Usuario->distribuidores();
+
+		
+		$this->set("distribuidores",$distribuidores);
+	}
+
+	function rutas(){
+		$distribuidores=$this->Escuela->Usuario->distribuidores();
+		$distribuidores[0]='Cualquiera';
+		$this->set("distribuidores",$distribuidores);
+	}
+
+
+		function filtros_base(){
+			$cond=array();
+		$cond[]=array('Base.lat'=>'<>0');
+		$cond[]=array('Base.lng'=>'<>0');
+
+		if($this->params['form']['territorios']=='true'){
+			$cond[]=array('Base.id_distribuidor'=>'>0');
+		}
+
+		if(!empty($this->params['form'])){
+			if(!empty($this->params['form']['nombre']))
+				$cond[]='Base.nombre like "%'.$this->params['form']['nombre'].'%"';
+
+			if(!empty($this->params['form']['estado']))
+				$cond[]=array('Base.estado'=>$this->params['form']['estado']);
+			if(!empty($this->params['form']['municipio']) && $this->params['form']['municipio']!='Cualquiera')
+				$cond[]=array('Base.municipio'=>$this->params['form']['municipio']);
+			if(!empty($this->params['form']['sector']) && $this->params['form']['sector']!='Cualquiera')
+				$cond[]='Base.sector like "%'.$this->params['form']['sector'].'%"';
+
+			if(!empty($this->params['form']['tipo']) && $this->params['form']['tipo']!='Cualquiera')
+				$cond[]=array('Base.tipo'=>$this->params['form']['tipo']);
+		
+			if(!empty($this->params['form']['turno']) && $this->params['form']['turno']!='Cualquiera')
+				$cond[]=array('Base.turno'=>$this->params['form']['turno']);
+
+			
+			if(!empty($this->params['form']['distribuidor'])){
+				if($this->params['form']['distribuidor']==99999)
+					$cond[]=array('Base.id_distribuidor'=>'<1');
+				else
+					$cond[]=array('Base.id_distribuidor'=>$this->params['form']['distribuidor']);
+			}
+			if(strlen($this->params['form']['alumnos'])>0){
+				$als=$this->params['form']['alumnos'];
+				$als=str_replace("-","<",$als);
+				$als=str_replace("+",">",$als);
+				$cond[]=array('Base.alumnos'=>$als);
+			}
+			
+			if(!empty($this->params['form']['cct']))
+				$cond[]='Base.cct like "%'.$this->params['form']['cct'].'%"';
+
+			if(!empty($this->params['form']['estatus']) && $this->params['form']['estatus']!='Cualquiera'){
+			
+				if($this->params['form']['estatus']==1)
+				$cond[]=array('Base.estatus'=>array(0,1));
+				
+				else
+				$cond[]=array('Base.estatus'=>$this->params['form']['estatus']);
+			}
+
+				
+			if(!empty($this->params['form']['verificada']) && $this->params['form']['verificada']!='Cualquiera'){
+				if($this->params['form']['verificada']==1)
+					$cond[]=array('Base.verificada'=>array(0,1));
+				
+				else
+					$cond[]=array('Base.verificada'=>$this->params['form']['verificada']);
+
+			}
+
+		}
+		return $cond;
+		}
+
+	function filtros(){
+		ini_set('memory_limit','999M');
+		$cond=$this->filtros_base();
+
+
+		$distribuidores=$this->Escuela->Usuario->distribuidores();
+		$distribuidores[0]='Vacante';
+		$this->set("distribuidores",$distribuidores);
+
+
+		$bases=$this->Base->findAll($cond,array(),'Base.nombre');
+			$this->set("bases",$bases);
+		$this->layout='ajax';
+
+		
+	}
+
+	function filtros_ruta(){
+		ini_set('memory_limit','999M');
+
+		$cond=$this->filtros_base();
+
+
+
+		$distribuidores=$this->Escuela->Usuario->distribuidores();
+		$distribuidores[0]='Vacante';
+		$this->set("distribuidores",$distribuidores);
+
+
+		$bases=$this->Base->findAll($cond,array(),array('Base.municipio_n','Base.nombre'));
+		$this->set("bases",$bases);
+		$this->layout='ajax';
+
+		
+	}
+
+	function importar_dis(){
+
+		
+		set_time_limit(0);
+ini_set('memory_limit','999M');
+
+		$cad=file_get_contents($_SERVER['DOCUMENT_ROOT']."/files/d0.txt");
+		
+		$dis=explode(";",$cad);
+		
+		$res=array();
+			foreach($dis as $d){
+				$dd=explode(":",$d);
+				$res[$dd[1]]=$dd[0];
+			}
+		
+
+		$this->paginate['conditions']=array('Base.id_distribuidor'=>'-1');
+		$this->paginate['limit']=10000;	
+		$bases=$this->paginate();
+
+		$voy=0;
+		foreach($bases as $b){
+			$datos=array();
+			$datos['Base']['id']=$b['Base']['id'];
+			$datos['Base']['id_distribuidor']=$res[$b['Base']['cct']];
+			if($this->Base->save($datos))
+				$voy++;
+		}
+		echo "Se actualizaron ".$voy." registros";die;
+
+	}
+
+	function importar_distribuidores($num){
+
+		$dis=array();
+		
+		$dis["ADRIANA GUADALUPE MARTINEZ LOYOLA"]=50;
+		$dis["ALFREDO CASASUS MOLINA"]=8;
+		$dis["ALMA YARELI RAMIREZ MENDOZA"]=12;
+		$dis["ANGEL FLORES OLIVOS"]=14;
+		$dis["BARBARA ALVAREZ JIMENEZ"]=9;
+		$dis["BIILA EDICIONES, S.A. DE C.V."]=36;  //Felipe Santiago 	BIILA EDICIONES 
+		$dis["CANDELARIA CONTRERAS RAMIREZ"]=10;
+		$dis["CARMELA CALDERA MUÑOZ"]=52;
+		$dis["CARMELA CALDERA MUÑOZ/RICARDO SANCHEZ HERNANDEZ"]=52;
+		$dis["CLAUDIA VANESSA PEREZ SANCHEZ"]=18;
+		$dis["CLETO ANGEL CHINO"]=66;
+		$dis["DISEDI, S.A. DE C.V."]=37;  //Francisco Huesca 	DISEDI 
+		$dis["EDITH GOMEZ RIOS"]=11;
+		$dis["ELISEO QUEZADA URIBE"]=21;
+		$dis["EVA VILLA LOPEZ"]=53;
+		$dis["FORTUNATO RIVERA RIVERA"]=38;
+		$dis["GERARDO REYNAUD GUTIERREZ"]=24;
+		$dis["GUADALUPE BENITEZ ISLAS"]=54;
+		$dis["GUSTAVO REYES LIRA LOPEZ"]=25;
+		$dis["INVMEX, S.A. DE C.V."]=39; // Mireya Molina 	INVMEX 
+		$dis["IRMA SANCHEZ GAETA"]=55;
+		$dis["JESUS FRANCISCO GUERRA MORENO"]=13;
+		$dis["JORGE ENRIQUE LOPEZ ZARAGOZA"]=26;
+		$dis["JOSE ANGEL PEÑA LOPEZ"]=69;
+		$dis["JOSE GUADALUPE MEDINA MORALES"]=15;
+		$dis["JOSE LUIS JUAREZ FRIAS"]=28;
+		$dis["JUAN CARLOS ZAVALA PEREZ"]=41;
+		$dis["JUAN PEDRO GALINDO ALCOSER"]=16;
+		$dis["LIBRERÍA EL TERCER MILENIO, S.A. DE C.V."]=29;
+		$dis["LIBRERIAS EL BACHILLER, S.A. DE C.V."]=42;   //Patricia Jiménez 	LIBRERIAS BACHILLER 
+		$dis["LUIS GUERRERO GASPAR"]=62;
+		$dis["MAGALI RIVERA GUILLEN"]=17;
+		$dis["MARCELA ELENA ZUÑIGA TORRES"]=43;
+		$dis["MARGARITA ELVIRA DOMINGUEZ RODRIGUEZ"]=30;
+		$dis["MARIA DE LOS ANGELES DE LA GARZA GUTIERREZ"]=57;
+		$dis["MARIA DEL CARMEN FIMBRES BARRIOS"]=19;
+		$dis["MARIO ALBERTO CHAN"]=44;
+		$dis["MARTHA PATRICIA CHAVEZ ROSADO"]=20;
+		$dis["MONICA LUDWICA OLMOS QUIÑONES"]=31;
+		$dis["NALLELY KIBSAIM MARTINEZ ROCHA"]=45;
+		$dis["NELSON TORRES GARCIA"]=58;
+		$dis["NORMA ESTHER CORREA GONZALEZ"]=59;
+		$dis["PEDRO CERVANTES RODRIGUEZ"]=46;
+		$dis["PEDRO EDUARDO NAVA DE LEON"]=32;
+		$dis["PUBLICACIONES MONTERREY, LIBROS Y REVISTAS, S.A. DE C.V."]=61; //Eduardo Font 	PublicacionesMTY 
+		$dis["RAUL PEREZ COLORADO"]=22;
+		$dis["REY ZAMBRANO QUEZADA"]=33;
+		$dis["REYNA SANTACRUZ HERNANDEZ"]=47;
+		$dis["RICARDO SANCHEZ HERNANDEZ"]=23;
+		$dis["ROMAN ALFONSO FIGUEROA ACOSTA"]=60;
+		$dis["ROMAN ALFONSO FIGUEROA CALDERON"]=70;
+		$dis["SERVICIOS EDUCATIVOS NACIONALES, S.A. DE C.V."]=71;
+		$dis["TEODORO RODRIGUEZ JOACHIN"]=34;
+		$dis["U VICTOR MANUEL TORRES SANCHEZ"]=48;
+		$dis["U YENY LOPEZ CARRILLO"]=27;
+		$dis["ARNULFO CANTON VERDUGO"]=51;
+		$dis["JORGE ARMANDO AGUAYO ALMAZAN"]=56;
+		$dis["ADRIANA MARIA TORRES VASQUEZ"]=95;
+		$dis["ANDRES JOSE BAEZ MENDEZ"]=35;
+		$dis["MA. DEL SOCORRO CARREON RODRIGUEZ"]=96;
+		$dis["VACANTE"]=0;
+		
+	
+		
+		
+		
+
+		set_time_limit(0);
+		ini_set('memory_limit','999M');
+
+		vendor('xls/PHPExcel');
+$objReader = PHPExcel_IOFactory::createReader('Excel2007');
+$objReader->setReadDataOnly(true);
+$objPHPExcel = $objReader->load($_SERVER['DOCUMENT_ROOT']."/files/dis_".$num.".xlsx");
+
+
+$objWorksheet = $objPHPExcel->getActiveSheet(0);
+$highestRow = $objWorksheet->getHighestRow(); 
+
+$voy=0;
+$cad="";
+	$res=array();
+	for ($row = 2; $row <= $highestRow; ++$row) {
+ 	    $datos=array();
+ 	 	$datos['usuario']=$objWorksheet->getCellByColumnAndRow(0, $row)->getValue();
+ 	 	$datos['cct']=utf8_decode($objWorksheet->getCellByColumnAndRow(1, $row)->getValue());
+	
+		if(empty($datos['usuario']))
+			$datos['usuario']='VACANTE';
+
+		if(!isset($dis[$datos['usuario']]))
+			echo "ERROR ".$row." usuario ".$datos['usuario']." no encontrado<br>";
+		
+		else if(empty($datos['cct'])){
+			//echo "ERROR ".$row." cct ".$datos['cct']." no encontrado<br>";
+		}
+		else{
+			$cad.=$dis[$datos['usuario']].":".$datos['cct']."; "  ;
+						
+		}
+	}
+
+	echo $cad;die;
+	echo "<hr>FIN, se editaron ".$voy. "registros";die;
+
+}
+
+
+	function importar_escuelas(){
+		$escuelas=$this->findAll(array('Escuela.id_distribuidor'=>'>0'));
+		foreach($escuela as $e){
+			$this->query("update bases set id_distribuidor=".$e['Escuela']['id_distribuidor']." where cct='".$e['Escuela']['cct']."' ");
+		
+		}
+		echo "fin";die;
+	}
+
+	function importar_estados(){
+		//$this->Base->query("Delete from bases");
+		set_time_limit(0);
+		ini_set('memory_limit','999M');
+
+vendor('xls/PHPExcel');
+$objReader = PHPExcel_IOFactory::createReader('Excel2007');
+$objReader->setReadDataOnly(true);
+
+$correctas=0;
+$cuantas=0;
+
+$objPHPExcel = $objReader->load($_SERVER['DOCUMENT_ROOT']."/files/estados.xlsx");
+$objWorksheet = $objPHPExcel->getActiveSheet(0);
+$highestRow = $objWorksheet->getHighestRow(); 
+
+	$res=array();
+	for ($row = 2; $row <= $highestRow; ++$row) {
+ 	    $datos=array();
+ 	 	$datos['estado']=utf8_decode($objWorksheet->getCellByColumnAndRow(0, $row)->getValue());
+ 	 	$datos['estado_n']=utf8_decode($objWorksheet->getCellByColumnAndRow(1, $row)->getValue());
+		$datos['municipio']=utf8_decode($objWorksheet->getCellByColumnAndRow(2, $row)->getValue());
+		$datos['municipio_n']=utf8_decode($objWorksheet->getCellByColumnAndRow(3, $row)->getValue());
+	
+		$res[$datos['estado']][$datos['municipio']]=$datos;
+	}
+	
+
+	foreach($res as $ll){
+	foreach($ll as $l){
+		$s=array('Estado'=>$l);
+		$cuantas++;
+		$this->Estado->create();
+		if($this->Estado->save($s))
+			$correctas++;
+		}
+	}
+	
+	
+	
+	echo "Se agregaron ".$correctas." de ".$cuantas;die;
+	}
+
+	
+	function importar($xx_num){
+		if($xx_num==1)
+			$this->Base->query("Delete from bases");
+		set_time_limit(0);
+		ini_set('memory_limit','999M');
+
+vendor('xls/PHPExcel');
+$objReader = PHPExcel_IOFactory::createReader('Excel2007');
+$objReader->setReadDataOnly(true);
+
+$correctas=0;
+$cuantas=0;
+
+$objPHPExcel = $objReader->load($_SERVER['DOCUMENT_ROOT']."/files/base_escuelas_".$xx_num.".xlsx");
+$objWorksheet = $objPHPExcel->getActiveSheet(0);
+$highestRow = $objWorksheet->getHighestRow(); 
+
+
+	for ($row = 2; $row <= $highestRow; ++$row) {
+ 	    $datos=array();
+		 $datos['cct']=utf8_decode($objWorksheet->getCellByColumnAndRow(0, $row)->getValue());
+		 $datos['turno']=utf8_decode($objWorksheet->getCellByColumnAndRow(1, $row)->getValue());
+ 	 	$datos['nombre']=utf8_decode($objWorksheet->getCellByColumnAndRow(2, $row)->getValue());
+		  $datos['tipo']=utf8_decode($objWorksheet->getCellByColumnAndRow(3, $row)->getValue());
+		  $datos['sector']=utf8_decode($objWorksheet->getCellByColumnAndRow(4, $row)->getValue());
+ 	 	$datos['estado']=utf8_decode($objWorksheet->getCellByColumnAndRow(5, $row)->getValue());
+		$datos['estado_n']=utf8_decode($objWorksheet->getCellByColumnAndRow(6, $row)->getValue());
+		$datos['municipio']=utf8_decode($objWorksheet->getCellByColumnAndRow(7, $row)->getValue());
+		$datos['municipio_n']=utf8_decode($objWorksheet->getCellByColumnAndRow(8, $row)->getValue());
+		$datos['alumnos']=utf8_decode($objWorksheet->getCellByColumnAndRow(9, $row)->getValue());
+		$datos['lng']=utf8_decode($objWorksheet->getCellByColumnAndRow(10, $row)->getValue());
+		$datos['lat']=utf8_decode($objWorksheet->getCellByColumnAndRow(11, $row)->getValue());
+		$datos['id_distribuidor']=0;
+	
+		
+
+		if(!empty($datos['cct'])){
+		
+			$escuela=$this->Escuela->find(array('Escuela.cct'=>$datos['cct']));
+			if(!empty($escuela)){
+				$datos['id_distribuidor']=$escuela['Escuela']['id_distribuidor'];
+				if(empty($datos['lat'])){
+					$datos['lat']=$escuela['Escuela']['lat'];
+					$datos['lng']=$escuela['Escuela']['lng'];
+				}
+
+			}
+			
+		}
+	
+
+		$s=array('Base'=>$datos);
+		$cuantas++;
+		$this->Base->create();
+		if($this->Base->save($s))
+			$correctas++;
+		}
+	
+	
+	
+	echo "Se agregaron ".$correctas." de ".$cuantas;die;
+	}
+	
+	
+
+	function municipio(){
+
+	$equipo1=$this->Estado->findAll(array('Estado.estado'=>$this->params['form']['estado']),array(),'Estado.municipio_n');
+	$municipios[]=array();
+	$municipios[0]="Cualquiera";
+		foreach($equipo1 as $e){
+				$municipios[$e['Estado']['municipio']]=utf8_encode($e['Estado']['municipio_n']);
+		}
+
+		$this->set("municipios",$municipios);
+		$this->layout='ajax';
+	}
+
+	function edit($id){
+		$base=$this->Base->read(null,$id);
+
+		$distribuidores=$this->Escuela->Usuario->distribuidores();
+		$this->set("distribuidores",$distribuidores);
+
+		$this->data['Base1']=$base['Base'];
+
+		if(stripos($this->data['Base1']['sector'],'blico')>0)
+				$this->data['Base1']['sector']='blico';
+
+				
+				$this->data['Base1']['nombre']=utf8_encode($this->data['Base1']['nombre']);
+		$this->layout='ajax';
+	}
+
+	function guardar(){
+		$datos=array();
+		$datos['Base']=$this->params['form'];
+		$datos['Base']['id']=trim($datos['Base']['id']);
+		
+		if(empty($datos['Base']['alumnos']))
+		$datos['Base']['alumnos']=0;
+
+
+		if($datos['Base']['sector']=='blico')
+				$datos['Base']['sector']=utf8_decode('PÚBLICO');
+
+	
+		$estado=$this->Estado->find(array('Estado.estado'=>$datos['Base']['estado'],'Estado.municipio'=>$datos['Base']['municipio']));
+		if(!empty($estado)){
+			$datos['Base']['estado_n']=$estado['Estado']['estado_n'];
+			$datos['Base']['municipio_n']=$estado['Estado']['municipio_n'];
+		}
+
+		$mis_permisos=$this->Session->read('Usuario.permisos');
+		$permiso_editar=0;
+		$c_permisos=explode("@",$mis_permisos);
+		if(array_search("Bases|add",$c_permisos)!==false)
+			$permiso_editar=1;
+
+		configure::load("app/app"); 
+		$escuelas=configure::read("escuelas"); 
+		$distribuidores=$this->Escuela->Usuario->distribuidores();
+
+		  $cad="<div style='width:200px;padding:10px;'>";
+
+		  if($datos['Base']['verificada']==2)
+		  $cad.='<div style="position:absolute;left:5px;top:5px" ><img src="/img/iconos/calificaciones.png" ></div>';
+
+
+          $cad.="<span class='titulo_etiqueta'>Nombre:</span> ".utf8_encode($datos['Base']['nombre']);
+          $cad.="<br><span class='titulo_etiqueta'>Estado:</span> ".utf8_encode($datos['Base']['estado_n']);
+          $cad.="<br><span class='titulo_etiqueta'>Municipio:</span> ".utf8_encode($datos['Base']['municipio_n']);
+
+
+
+          $cad.="<br><span class='titulo_etiqueta'>Tipo:</span> ".$datos['Base']['tipo'];
+          $cad.="<br><span class='titulo_etiqueta'>Sector:</span> ".utf8_encode($datos['Base']['sector']);
+          $cad.="<br><span class='titulo_etiqueta'>Turno:</span> ".$escuelas['turnos'][$datos['Base']['turno']];
+          $cad.="<br><span class='titulo_etiqueta'>CCT:</span> ".$datos['Base']['cct'];
+          $cad.="<br><span class='titulo_etiqueta'># De Alumnos:</span> ".$datos['Base']['alumnos'];
+          $cad.="<br><span class='titulo_etiqueta'>Distribuidor:</span> ".$distribuidores[$datos['Base']['id_distribuidor']];
+
+		 
+
+          if($permiso_editar==1){
+            $cad.="<br><br><center><a href=javascript:editar_info(".$datos['Base']['id'].") >Editar información</a></center>";
+			$cad.="<br><center><a href=javascript:mover_pin(".$datos['Base']['id'].") >Mover Pin</a></center>";
+   
+		}
+
+
+        $cad.="</div>";
+		echo $cad;
+		$mover=0;
+		if(empty($datos['Base']['id'])){
+			$datos['Base'] = array_reverse($datos['Base']);
+			array_pop($datos['Base']);
+			$this->Base->create();
+
+			$datos['Base']['lat']=23.6;
+			$datos['Base']['lng']=-102.5;
+			$mover=1;
+		}
+
+		$datos['Base']['nombre']=utf8_decode($datos['Base']['nombre']);
+		$this->Base->save($datos);
+		if($mover){
+		?>
+		<script>
+			document.getElementById("BaseCct").value='<?php echo $datos['Base']['cct']; ?>';
+			setTimeout('mover_pin(<?php echo $this->Base->id; ?>)',1000);
+		</script>
+		<?php
+		}
+		die;
+	}
+
+	function mover_pin(){
+		$id=$this->params['form']['id'];
+		$base=$this->Base->read(null,$id);
+
+
+		$this->set("mover",1);
+		$this->set("bases",array(0=>$base));
+		$this->layout='ajax';
+		$this->render('filtros');
+
+	}
+
+	function guardar_pin(){
+		$datos=array();
+		$datos['Base']=$this->params['form'];
+		$this->Base->save($datos);
+		die;
+	}
+
+	function add(){
+	
+		$distribuidores=$this->Escuela->Usuario->distribuidores();
+		$this->set("distribuidores",$distribuidores);
+		$this->layout='ajax';
+		$this->render('edit');
+
+	}
+
+	function sin_coordenadas($paginado=null){
+
+		$this->paginate['conditions']=array('Base.lat'=>0);
+		$this->paginate['order']=array('Base.estado_n','Base.municipio_n','Base.nombre','Base.cct');
+
+		if(!empty($paginado))
+			$this->paginate['limit']=1000;
+		
+		$this->Base->recursive = 0;
+		$this->set('bases', $this->paginate());
+	}
+
+	function guardar_ruta(){
+		$datos=array();
+		$datos['Ruta']=$this->params['form'];
+		$datos['Ruta']['id_usuario']=$this->id_activo();
+		$this->Ruta->create();
+		$this->Ruta->save($datos);
+		die;
+	}
+	function transferir_usuarios() {
+		$this->layout = false;
+		$this->autoRender = false; // Para devolver JSON
+		
+		// Obtener usuarios activos
+		$usuarios_raw = $this->Escuela->Usuario->find('all', array(
+			'conditions' => array('Usuario.activo' => 1),
+			'fields' => array('Usuario.id', 'Usuario.nombre','Usuario.apellido_p','Usuario.apellido_m'),
+			'order' => array('Usuario.nombre' => 'ASC')
+		));
+		
+		$usuarios = array();
+		foreach ($usuarios_raw as $u) {
+			$usuarios[$u['Usuario']['id']] = trim(
+				$u['Usuario']['nombre'] . ' ' . $u['Usuario']['apellido_p'] . ' ' . $u['Usuario']['apellido_m']
+			);
+		}
+		
+		if (!empty($this->data)) {
+			$id_usuario_viejo = $this->data['Base']['usuario_origen'];
+			$id_usuario_nuevo = $this->data['Base']['usuario_destino'];
+			
+			if ($id_usuario_viejo == $id_usuario_nuevo) {
+				echo json_encode(array(
+					'success' => false,
+					'message' => 'El usuario origen y destino no pueden ser el mismo.'
+				));
+				return;
+			}
+			
+			// Obtener el datasource para la transacción
+			$dataSource = ConnectionManager::getDataSource('default');
+			
+			try {
+				// Iniciar transacción
+				$dataSource->begin();
+				
+				// 1. Transferir BASES
+				$this->Base->query("
+					UPDATE bases 
+					SET id_distribuidor = $id_usuario_nuevo 
+					WHERE id_distribuidor = $id_usuario_viejo
+				");
+				
+				// 2. Transferir ESCUELAS
+				$this->Escuela->query("
+					UPDATE escuelas 
+					SET id_distribuidor = $id_usuario_nuevo 
+					WHERE id_distribuidor = $id_usuario_viejo
+				");
+				
+				// 3. Desactivar usuario viejo
+				$this->Escuela->Usuario->query("
+					UPDATE usuarios 
+					SET activo = 1 
+					WHERE id = $id_usuario_viejo
+				");
+				
+				$dataSource->commit();
+				echo json_encode(array(
+					'success' => true,
+					'message' => 'Transferencia completada correctamente.'
+				));
+			} catch (Exception $e) {
+				$dataSource->rollback();
+				echo json_encode(array(
+					'success' => false,
+					'message' => 'Error al transferir datos: ' . $e->getMessage()
+				));
+			}
+		} else {
+			// Si no es POST, mostrar el formulario
+			$this->set('usuarios', $usuarios);
+			$this->render('transferir_usuarios');
+		}
+	}
+	
+	function asignar_distribuidor_estado() {
+		$this->layout = false;
+		$this->autoRender = false; // Para devolver JSON
+		
+		// Procesar el formulario si se envió
+		if (!empty($this->data)) {
+			$estado_origen = intval($this->data['Base']['estado_origen']);
+			$id_usuario_nuevo = intval($this->data['Base']['id_usuario_nuevo']);
+			
+			$query = "UPDATE bases SET id_distribuidor = {$id_usuario_nuevo} WHERE estado = {$estado_origen}";
+			$result = $this->Base->query($query);
+			
+			if ($result !== false) {
+				$filas_afectadas = $this->Base->getAffectedRows();
+				echo json_encode(array(
+					'success' => true,
+					'message' => "✔ Distribuidor asignado correctamente a $filas_afectadas registros."
+				));
+			} else {
+				$error = $this->Base->getDataSource()->lastError();
+				echo json_encode(array(
+					'success' => false,
+					'message' => "❌ Error al asignar distribuidor: " . $error
+				));
+			}
+			return;
+		}
+		
+		// Obtener estados
+		$estados = $this->Estado->query("
+			SELECT estado, estado_n 
+			FROM estados 
+			GROUP BY estado_n 
+			ORDER BY estado_n
+		");
+		
+		$estadosOptions = array('' => '-- Selecciona un estado --');
+		foreach ($estados as $estado) {
+			$estadosOptions[$estado['estados']['estado']] = $estado['estados']['estado_n'];
+		}
+		
+		// Obtener usuarios
+		$usuarios = $this->Escuela->Usuario->query("
+			SELECT id, nombre, apellido_p, apellido_m 
+			FROM usuarios 
+			ORDER BY nombre
+		");
+		
+		$usuariosOptions = array('' => '-- Selecciona un usuario --');
+		foreach ($usuarios as $usuario) {
+			$nombre_completo = trim(
+				$usuario['usuarios']['nombre'] . ' ' .
+				$usuario['usuarios']['apellido_p'] . ' ' .
+				$usuario['usuarios']['apellido_m']
+			);
+			$usuariosOptions[$usuario['usuarios']['id']] = $nombre_completo;
+		}
+	
+		$this->set(compact('estadosOptions', 'usuariosOptions'));
+		$this->render('asignar_distribuidor_estado');
+	}
+	// function transferir_usuarios() {
+	// 	$this->layout = false;
+	// 	// Obtener usuarios activos
+	// 	$usuarios_raw = $this->Escuela->Usuario->find('all', array(
+	// 		'conditions' => array('Usuario.activo' => 1),
+	// 		'fields' => array('Usuario.id', 'Usuario.nombre','Usuario.apellido_p','Usuario.apellido_m'),
+	// 		'order' => array('Usuario.nombre' => 'ASC')
+	// 	));
+		
+	// 	$usuarios = array();
+	// 	foreach ($usuarios_raw as $u) {
+	// 		// $usuarios[$u['Usuario']['id']] = $u['Usuario']['nombre'];
+	// 		$usuarios[$u['Usuario']['id']] = trim(
+	// 			$u['Usuario']['nombre'] . ' ' . $u['Usuario']['apellido_p'] . ' ' . $u['Usuario']['apellido_m']
+	// 		);
+	// 	}
+		
+	// 	$this->set('usuarios', $usuarios);
+		
+	// 	if (!empty($this->data)) {
+	// 		$id_usuario_viejo = $this->data['Base']['usuario_origen'];
+	// 		$id_usuario_nuevo = $this->data['Base']['usuario_destino'];
+			
+	// 		if ($id_usuario_viejo == $id_usuario_nuevo) {
+	// 			$this->Session->setFlash('El usuario origen y destino no pueden ser el mismo.', 'default', array('class' => 'error'));
+	// 		} else {
+	// 			// Obtener el datasource para la transacción
+	// 			$dataSource = ConnectionManager::getDataSource('default');
+				
+	// 			try {
+	// 				// Iniciar transacción
+	// 				$dataSource->begin();
+					
+	// 				// 1. Transferir BASES usando query directo (como en tu versión PHP)
+	// 				$this->Base->query("
+	// 					UPDATE bases 
+	// 					SET id_distribuidor = $id_usuario_nuevo 
+	// 					WHERE id_distribuidor = $id_usuario_viejo
+	// 				");
+					
+	// 				// 2. Transferir ESCUELAS usando query directo
+	// 				$this->Escuela->query("
+	// 					UPDATE escuelas 
+	// 					SET id_distribuidor = $id_usuario_nuevo 
+	// 					WHERE id_distribuidor = $id_usuario_viejo
+	// 				");
+					
+	// 				// 3. Desactivar usuario viejo
+	// 				$this->Escuela->Usuario->query("
+	// 					UPDATE usuarios 
+	// 					SET activo = 1 
+	// 					WHERE id = $id_usuario_viejo
+	// 				");
+					
+	// 				$dataSource->commit();
+	// 				$this->Session->setFlash('Transferencia completada correctamente.', 'default', array('class' => 'success'));
+	// 			} catch (Exception $e) {
+	// 				$dataSource->rollback();
+	// 				$this->Session->setFlash('Error al transferir datos: ' . $e->getMessage(), 'default', array('class' => 'error'));
+	// 			}
+	// 		}
+	// 	}
+	// }
+
+	// function asignar_distribuidor_estado() {
+	// 	$this->layout = 'ajax';
+		
+	// 	// Procesar el formulario si se envió
+	// 	if (!empty($this->data)) {
+	// 		$estado_origen = intval($this->data['Base']['estado_origen']);
+	// 		$id_usuario_nuevo = intval($this->data['Base']['id_usuario_nuevo']);
+			
+	// 		// Construir la consulta inyectando los valores
+	// 		$query = "UPDATE bases SET id_distribuidor = {$id_usuario_nuevo} WHERE estado = {$estado_origen}";
+			
+	// 		// Ejecutar la consulta
+	// 		$result = $this->Base->query($query);
+			
+	// 		if ($result !== false) {
+	// 			$filas_afectadas = $this->Base->getAffectedRows();
+	// 			$this->Session->setFlash(
+	// 				"✔ Distribuidor asignado correctamente a $filas_afectadas registros.", 
+	// 				'default', 
+	// 				array('class' => 'success')
+	// 			);
+				
+	// 			// Depuración - verificar consulta ejecutada
+	// 			debug($this->Base->getLastQuery());
+	// 		} else {
+	// 			// Obtener el error específico de MySQL
+	// 			$error = $this->Base->getDataSource()->lastError();
+	// 			$this->Session->setFlash(
+	// 				"❌ Error al asignar distribuidor: " . $error, 
+	// 				'default', 
+	// 				array('class' => 'error')
+	// 			);
+	// 		}
+			
+	// 	}
+	
+	// 	// Obtener estados
+	// 	$estados = $this->Estado->query("
+	// 		SELECT estado, estado_n 
+	// 		FROM estados 
+	// 		GROUP BY estado_n 
+	// 		ORDER BY estado_n
+	// 	");
+		
+	// 	$estadosOptions = array('' => '-- Selecciona un estado --');
+	// 	foreach ($estados as $estado) {
+	// 		$estadosOptions[$estado['estados']['estado']] = $estado['estados']['estado_n'];
+	// 	}
+		
+	// 	// Obtener usuarios
+	// 	$usuarios = $this->Escuela->Usuario->query("
+	// 		SELECT id, nombre, apellido_p, apellido_m 
+	// 		FROM usuarios 
+	// 		ORDER BY nombre
+	// 	");
+		
+	// 	$usuariosOptions = array('' => '-- Selecciona un usuario --');
+	// 	foreach ($usuarios as $usuario) {
+	// 		$nombre_completo = trim(
+	// 			$usuario['usuarios']['nombre'] . ' ' .
+	// 			$usuario['usuarios']['apellido_p'] . ' ' .
+	// 			$usuario['usuarios']['apellido_m']
+	// 		);
+	// 		$usuariosOptions[$usuario['usuarios']['id']] = $nombre_completo;
+	// 	}
+	
+	// 	$this->set(compact('estadosOptions', 'usuariosOptions'));
+	// }
+	
+}
+?>

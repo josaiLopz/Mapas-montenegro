@@ -1,0 +1,51 @@
+.label-input-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  /* Espacio entre los elementos */
+  margin-bottom: 5px;
+  /* Espacio entre cada par de label-input */
+}
+
+.label-input-container1 {
+  margin-left: 10%;
+  margin-top: 20px;
+  margin-bottom: 30px;
+}
+
+.label-input-container label {
+  align-self: flex-start;
+  /* Alinear label a la izquierda */
+  margin-bottom: 2px;
+  /* Espacio entre cada label y su input */
+}
+
+.label-input-container input,
+.label-input-container select {
+  align-self: flex-end;
+  /* Alinear input y select a la derecha */
+  width: 20%;
+  /* Tamaño de 20% para inputs y selects */
+}
+
+.metapl {
+  margin-left: 40px;
+}
+
+p {
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  font-weight: bold;
+  /* Texto en negrita */
+  color: #800020;
+  /* Rojo vino */
+  margin-bottom: 10px;
+  margin-left: 10%;
+}
+
+p span {
+  float: right;
+  /* Alinear a la derecha */
+  margin-right: 10%;
+  font-size: 20px;
+}

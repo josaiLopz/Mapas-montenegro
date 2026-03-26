@@ -1,4 +1,4 @@
-﻿<?php
+﻿﻿<?php
 /**
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\School $school
@@ -64,7 +64,13 @@ $statusOptions = [
             <?= $this->Form->control('telefono_contacto') ?>
             <?= $this->Form->control('correo_contacto') ?>
 
-            <?= $this->Form->control('editorial_actual') ?>
+            <?= $this->Form->control('editorial_actual', [
+                'type' => 'select',
+                'options' => [
+                    'Campo formativo' => 'Campo formativo',
+                    'Integrados' => 'Integrados',
+                    'Sistemas educativos' => 'Sistemas educativos'],
+                'empty' => '-- Seleccione tipo de compra--']) ?>
             <?= $this->Form->control('competencia') ?>
             <?= $this->Form->control('presupuesto') ?>
             <?= $this->Form->control('fecha_decision', ['empty' => true]) ?>

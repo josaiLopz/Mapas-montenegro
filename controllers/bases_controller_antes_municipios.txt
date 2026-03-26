@@ -1,0 +1,1157 @@
+<?php
+class BasesController extends AppController {
+
+	var $name = 'Bases';
+	var $helpers = array('Html', 'Form');
+	var $uses=array('Base','Escuela','Estado','Ruta');
+
+	function index(){
+		$distribuidores=$this->Escuela->Usuario->distribuidores();
+
+		
+		$this->set("distribuidores",$distribuidores);
+	}
+
+	function rutas(){
+		$distribuidores=$this->Escuela->Usuario->distribuidores();
+		$distribuidores[0]='Cualquiera';
+		$this->set("distribuidores",$distribuidores);
+	}
+
+
+		function filtros_base(){
+			$cond=array();
+		$cond[]=array('Base.lat'=>'<>0');
+		$cond[]=array('Base.lng'=>'<>0');
+
+		if($this->params['form']['territorios']=='true'){
+			$cond[]=array('Base.id_distribuidor'=>'>0');
+		}
+
+		if(!empty($this->params['form'])){
+			if(!empty($this->params['form']['nombre']))
+				$cond[]='Base.nombre like "%'.$this->params['form']['nombre'].'%"';
+
+			if(!empty($this->params['form']['estado']))
+				$cond[]=array('Base.estado'=>$this->params['form']['estado']);
+			if(!empty($this->params['form']['municipio']) && $this->params['form']['municipio']!='Cualquiera')
+				$cond[]=array('Base.municipio'=>$this->params['form']['municipio']);
+			if(!empty($this->params['form']['sector']) && $this->params['form']['sector']!='Cualquiera')
+				$cond[]='Base.sector like "%'.$this->params['form']['sector'].'%"';
+
+			if(!empty($this->params['form']['tipo']) && $this->params['form']['tipo']!='Cualquiera')
+				$cond[]=array('Base.tipo'=>$this->params['form']['tipo']);
+		
+			if(!empty($this->params['form']['turno']) && $this->params['form']['turno']!='Cualquiera')
+				$cond[]=array('Base.turno'=>$this->params['form']['turno']);
+
+			
+			if(!empty($this->params['form']['distribuidor'])){
+				if($this->params['form']['distribuidor']==99999)
+					$cond[]=array('Base.id_distribuidor'=>'<1');
+				else
+					$cond[]=array('Base.id_distribuidor'=>$this->params['form']['distribuidor']);
+			}
+			if(strlen($this->params['form']['alumnos'])>0){
+				$als=$this->params['form']['alumnos'];
+				$als=str_replace("-","<",$als);
+				$als=str_replace("+",">",$als);
+				$cond[]=array('Base.alumnos'=>$als);
+			}
+			
+			if(!empty($this->params['form']['cct']))
+				$cond[]='Base.cct like "%'.$this->params['form']['cct'].'%"';
+
+			if(!empty($this->params['form']['estatus']) && $this->params['form']['estatus']!='Cualquiera'){
+			
+				if($this->params['form']['estatus']==1)
+				$cond[]=array('Base.estatus'=>array(0,1));
+				
+				else
+				$cond[]=array('Base.estatus'=>$this->params['form']['estatus']);
+			}
+
+				
+			if(!empty($this->params['form']['verificada']) && $this->params['form']['verificada']!='Cualquiera'){
+				if($this->params['form']['verificada']==1)
+					$cond[]=array('Base.verificada'=>array(0,1));
+				
+				else
+					$cond[]=array('Base.verificada'=>$this->params['form']['verificada']);
+
+			}
+
+		}
+		return $cond;
+		}
+
+	function filtros(){
+		ini_set('memory_limit','999M');
+		$cond=$this->filtros_base();
+
+
+		$distribuidores=$this->Escuela->Usuario->distribuidores();
+		$distribuidores[0]='Vacante';
+		$this->set("distribuidores",$distribuidores);
+
+
+		$bases=$this->Base->findAll($cond,array(),'Base.nombre');
+			$this->set("bases",$bases);
+		$this->layout='ajax';
+
+		
+	}
+
+	function filtros_ruta(){
+		ini_set('memory_limit','999M');
+
+		$cond=$this->filtros_base();
+
+
+
+		$distribuidores=$this->Escuela->Usuario->distribuidores();
+		$distribuidores[0]='Vacante';
+		$this->set("distribuidores",$distribuidores);
+
+
+		$bases=$this->Base->findAll($cond,array(),array('Base.municipio_n','Base.nombre'));
+		$this->set("bases",$bases);
+		$this->layout='ajax';
+
+		
+	}
+
+	function importar_dis(){
+
+		
+		set_time_limit(0);
+ini_set('memory_limit','999M');
+
+		$cad=file_get_contents($_SERVER['DOCUMENT_ROOT']."/files/d0.txt");
+		
+		$dis=explode(";",$cad);
+		
+		$res=array();
+			foreach($dis as $d){
+				$dd=explode(":",$d);
+				$res[$dd[1]]=$dd[0];
+			}
+		
+
+		$this->paginate['conditions']=array('Base.id_distribuidor'=>'-1');
+		$this->paginate['limit']=10000;	
+		$bases=$this->paginate();
+
+		$voy=0;
+		foreach($bases as $b){
+			$datos=array();
+			$datos['Base']['id']=$b['Base']['id'];
+			$datos['Base']['id_distribuidor']=$res[$b['Base']['cct']];
+			if($this->Base->save($datos))
+				$voy++;
+		}
+		echo "Se actualizaron ".$voy." registros";die;
+
+	}
+
+	function importar_distribuidores($num){
+
+		$dis=array();
+		
+		$dis["ADRIANA GUADALUPE MARTINEZ LOYOLA"]=50;
+		$dis["ALFREDO CASASUS MOLINA"]=8;
+		$dis["ALMA YARELI RAMIREZ MENDOZA"]=12;
+		$dis["ANGEL FLORES OLIVOS"]=14;
+		$dis["BARBARA ALVAREZ JIMENEZ"]=9;
+		$dis["BIILA EDICIONES, S.A. DE C.V."]=36;  //Felipe Santiago 	BIILA EDICIONES 
+		$dis["CANDELARIA CONTRERAS RAMIREZ"]=10;
+		$dis["CARMELA CALDERA MUÑOZ"]=52;
+		$dis["CARMELA CALDERA MUÑOZ/RICARDO SANCHEZ HERNANDEZ"]=52;
+		$dis["CLAUDIA VANESSA PEREZ SANCHEZ"]=18;
+		$dis["CLETO ANGEL CHINO"]=66;
+		$dis["DISEDI, S.A. DE C.V."]=37;  //Francisco Huesca 	DISEDI 
+		$dis["EDITH GOMEZ RIOS"]=11;
+		$dis["ELISEO QUEZADA URIBE"]=21;
+		$dis["EVA VILLA LOPEZ"]=53;
+		$dis["FORTUNATO RIVERA RIVERA"]=38;
+		$dis["GERARDO REYNAUD GUTIERREZ"]=24;
+		$dis["GUADALUPE BENITEZ ISLAS"]=54;
+		$dis["GUSTAVO REYES LIRA LOPEZ"]=25;
+		$dis["INVMEX, S.A. DE C.V."]=39; // Mireya Molina 	INVMEX 
+		$dis["IRMA SANCHEZ GAETA"]=55;
+		$dis["JESUS FRANCISCO GUERRA MORENO"]=13;
+		$dis["JORGE ENRIQUE LOPEZ ZARAGOZA"]=26;
+		$dis["JOSE ANGEL PEÑA LOPEZ"]=69;
+		$dis["JOSE GUADALUPE MEDINA MORALES"]=15;
+		$dis["JOSE LUIS JUAREZ FRIAS"]=28;
+		$dis["JUAN CARLOS ZAVALA PEREZ"]=41;
+		$dis["JUAN PEDRO GALINDO ALCOSER"]=16;
+		$dis["LIBRERÍA EL TERCER MILENIO, S.A. DE C.V."]=29;
+		$dis["LIBRERIAS EL BACHILLER, S.A. DE C.V."]=42;   //Patricia Jiménez 	LIBRERIAS BACHILLER 
+		$dis["LUIS GUERRERO GASPAR"]=62;
+		$dis["MAGALI RIVERA GUILLEN"]=17;
+		$dis["MARCELA ELENA ZUÑIGA TORRES"]=43;
+		$dis["MARGARITA ELVIRA DOMINGUEZ RODRIGUEZ"]=30;
+		$dis["MARIA DE LOS ANGELES DE LA GARZA GUTIERREZ"]=57;
+		$dis["MARIA DEL CARMEN FIMBRES BARRIOS"]=19;
+		$dis["MARIO ALBERTO CHAN"]=44;
+		$dis["MARTHA PATRICIA CHAVEZ ROSADO"]=20;
+		$dis["MONICA LUDWICA OLMOS QUIÑONES"]=31;
+		$dis["NALLELY KIBSAIM MARTINEZ ROCHA"]=45;
+		$dis["NELSON TORRES GARCIA"]=58;
+		$dis["NORMA ESTHER CORREA GONZALEZ"]=59;
+		$dis["PEDRO CERVANTES RODRIGUEZ"]=46;
+		$dis["PEDRO EDUARDO NAVA DE LEON"]=32;
+		$dis["PUBLICACIONES MONTERREY, LIBROS Y REVISTAS, S.A. DE C.V."]=61; //Eduardo Font 	PublicacionesMTY 
+		$dis["RAUL PEREZ COLORADO"]=22;
+		$dis["REY ZAMBRANO QUEZADA"]=33;
+		$dis["REYNA SANTACRUZ HERNANDEZ"]=47;
+		$dis["RICARDO SANCHEZ HERNANDEZ"]=23;
+		$dis["ROMAN ALFONSO FIGUEROA ACOSTA"]=60;
+		$dis["ROMAN ALFONSO FIGUEROA CALDERON"]=70;
+		$dis["SERVICIOS EDUCATIVOS NACIONALES, S.A. DE C.V."]=71;
+		$dis["TEODORO RODRIGUEZ JOACHIN"]=34;
+		$dis["U VICTOR MANUEL TORRES SANCHEZ"]=48;
+		$dis["U YENY LOPEZ CARRILLO"]=27;
+		$dis["ARNULFO CANTON VERDUGO"]=51;
+		$dis["JORGE ARMANDO AGUAYO ALMAZAN"]=56;
+		$dis["ADRIANA MARIA TORRES VASQUEZ"]=95;
+		$dis["ANDRES JOSE BAEZ MENDEZ"]=35;
+		$dis["MA. DEL SOCORRO CARREON RODRIGUEZ"]=96;
+		$dis["VACANTE"]=0;
+		
+	
+		
+		
+		
+
+		set_time_limit(0);
+		ini_set('memory_limit','999M');
+
+		vendor('xls/PHPExcel');
+$objReader = PHPExcel_IOFactory::createReader('Excel2007');
+$objReader->setReadDataOnly(true);
+$objPHPExcel = $objReader->load($_SERVER['DOCUMENT_ROOT']."/files/dis_".$num.".xlsx");
+
+
+$objWorksheet = $objPHPExcel->getActiveSheet(0);
+$highestRow = $objWorksheet->getHighestRow(); 
+
+$voy=0;
+$cad="";
+	$res=array();
+	for ($row = 2; $row <= $highestRow; ++$row) {
+ 	    $datos=array();
+ 	 	$datos['usuario']=$objWorksheet->getCellByColumnAndRow(0, $row)->getValue();
+ 	 	$datos['cct']=utf8_decode($objWorksheet->getCellByColumnAndRow(1, $row)->getValue());
+	
+		if(empty($datos['usuario']))
+			$datos['usuario']='VACANTE';
+
+		if(!isset($dis[$datos['usuario']]))
+			echo "ERROR ".$row." usuario ".$datos['usuario']." no encontrado<br>";
+		
+		else if(empty($datos['cct'])){
+			//echo "ERROR ".$row." cct ".$datos['cct']." no encontrado<br>";
+		}
+		else{
+			$cad.=$dis[$datos['usuario']].":".$datos['cct']."; "  ;
+						
+		}
+	}
+
+	echo $cad;die;
+	echo "<hr>FIN, se editaron ".$voy. "registros";die;
+
+}
+
+
+	function importar_escuelas(){
+		$escuelas=$this->findAll(array('Escuela.id_distribuidor'=>'>0'));
+		foreach($escuela as $e){
+			$this->query("update bases set id_distribuidor=".$e['Escuela']['id_distribuidor']." where cct='".$e['Escuela']['cct']."' ");
+		
+		}
+		echo "fin";die;
+	}
+
+	function importar_estados(){
+		//$this->Base->query("Delete from bases");
+		set_time_limit(0);
+		ini_set('memory_limit','999M');
+
+vendor('xls/PHPExcel');
+$objReader = PHPExcel_IOFactory::createReader('Excel2007');
+$objReader->setReadDataOnly(true);
+
+$correctas=0;
+$cuantas=0;
+
+$objPHPExcel = $objReader->load($_SERVER['DOCUMENT_ROOT']."/files/estados.xlsx");
+$objWorksheet = $objPHPExcel->getActiveSheet(0);
+$highestRow = $objWorksheet->getHighestRow(); 
+
+	$res=array();
+	for ($row = 2; $row <= $highestRow; ++$row) {
+ 	    $datos=array();
+ 	 	$datos['estado']=utf8_decode($objWorksheet->getCellByColumnAndRow(0, $row)->getValue());
+ 	 	$datos['estado_n']=utf8_decode($objWorksheet->getCellByColumnAndRow(1, $row)->getValue());
+		$datos['municipio']=utf8_decode($objWorksheet->getCellByColumnAndRow(2, $row)->getValue());
+		$datos['municipio_n']=utf8_decode($objWorksheet->getCellByColumnAndRow(3, $row)->getValue());
+	
+		$res[$datos['estado']][$datos['municipio']]=$datos;
+	}
+	
+
+	foreach($res as $ll){
+	foreach($ll as $l){
+		$s=array('Estado'=>$l);
+		$cuantas++;
+		$this->Estado->create();
+		if($this->Estado->save($s))
+			$correctas++;
+		}
+	}
+	
+	
+	
+	echo "Se agregaron ".$correctas." de ".$cuantas;die;
+	}
+
+	
+	function importar($xx_num){
+		if($xx_num==1)
+			$this->Base->query("Delete from bases");
+		set_time_limit(0);
+		ini_set('memory_limit','999M');
+
+vendor('xls/PHPExcel');
+$objReader = PHPExcel_IOFactory::createReader('Excel2007');
+$objReader->setReadDataOnly(true);
+
+$correctas=0;
+$cuantas=0;
+
+$objPHPExcel = $objReader->load($_SERVER['DOCUMENT_ROOT']."/files/base_escuelas_".$xx_num.".xlsx");
+$objWorksheet = $objPHPExcel->getActiveSheet(0);
+$highestRow = $objWorksheet->getHighestRow(); 
+
+
+	for ($row = 2; $row <= $highestRow; ++$row) {
+ 	    $datos=array();
+		 $datos['cct']=utf8_decode($objWorksheet->getCellByColumnAndRow(0, $row)->getValue());
+		 $datos['turno']=utf8_decode($objWorksheet->getCellByColumnAndRow(1, $row)->getValue());
+ 	 	$datos['nombre']=utf8_decode($objWorksheet->getCellByColumnAndRow(2, $row)->getValue());
+		  $datos['tipo']=utf8_decode($objWorksheet->getCellByColumnAndRow(3, $row)->getValue());
+		  $datos['sector']=utf8_decode($objWorksheet->getCellByColumnAndRow(4, $row)->getValue());
+ 	 	$datos['estado']=utf8_decode($objWorksheet->getCellByColumnAndRow(5, $row)->getValue());
+		$datos['estado_n']=utf8_decode($objWorksheet->getCellByColumnAndRow(6, $row)->getValue());
+		$datos['municipio']=utf8_decode($objWorksheet->getCellByColumnAndRow(7, $row)->getValue());
+		$datos['municipio_n']=utf8_decode($objWorksheet->getCellByColumnAndRow(8, $row)->getValue());
+		$datos['alumnos']=utf8_decode($objWorksheet->getCellByColumnAndRow(9, $row)->getValue());
+		$datos['lng']=utf8_decode($objWorksheet->getCellByColumnAndRow(10, $row)->getValue());
+		$datos['lat']=utf8_decode($objWorksheet->getCellByColumnAndRow(11, $row)->getValue());
+		$datos['id_distribuidor']=0;
+	
+		
+
+		if(!empty($datos['cct'])){
+		
+			$escuela=$this->Escuela->find(array('Escuela.cct'=>$datos['cct']));
+			if(!empty($escuela)){
+				$datos['id_distribuidor']=$escuela['Escuela']['id_distribuidor'];
+				if(empty($datos['lat'])){
+					$datos['lat']=$escuela['Escuela']['lat'];
+					$datos['lng']=$escuela['Escuela']['lng'];
+				}
+
+			}
+			
+		}
+	
+
+		$s=array('Base'=>$datos);
+		$cuantas++;
+		$this->Base->create();
+		if($this->Base->save($s))
+			$correctas++;
+		}
+	
+	
+	
+	echo "Se agregaron ".$correctas." de ".$cuantas;die;
+	}
+	
+	
+
+	function municipio(){
+
+	$equipo1=$this->Estado->findAll(array('Estado.estado'=>$this->params['form']['estado']),array(),'Estado.municipio_n');
+	$municipios[]=array();
+	$municipios[0]="Cualquiera";
+		foreach($equipo1 as $e){
+				$municipios[$e['Estado']['municipio']]=utf8_encode($e['Estado']['municipio_n']);
+		}
+
+		$this->set("municipios",$municipios);
+		$this->layout='ajax';
+	}
+
+	function edit($id){
+		$base=$this->Base->read(null,$id);
+
+		$distribuidores=$this->Escuela->Usuario->distribuidores();
+		$this->set("distribuidores",$distribuidores);
+
+		$this->data['Base1']=$base['Base'];
+
+		if(stripos($this->data['Base1']['sector'],'blico')>0)
+				$this->data['Base1']['sector']='blico';
+
+				
+				$this->data['Base1']['nombre']=utf8_encode($this->data['Base1']['nombre']);
+		$this->layout='ajax';
+	}
+
+	function guardar() {
+		// 1. Preparación inicial de datos (sin cambios)
+		$datos = array();
+		$datos['Base'] = $this->params['form'];
+		$datos['Base']['id'] = trim($datos['Base']['id']);
+		
+		// Procesamiento común de datos (sin cambios)
+		if(empty($datos['Base']['alumnos'])) {
+			$datos['Base']['alumnos'] = 0;
+		}
+	
+		if($datos['Base']['sector'] == 'blico') {
+			$datos['Base']['sector'] = utf8_decode('PÚBLICO');
+		}
+	
+		// Obtención de datos de estado (sin cambios)
+		$estado = $this->Estado->find(array(
+			'Estado.estado' => $datos['Base']['estado'],
+			'Estado.municipio' => $datos['Base']['municipio']
+		));
+		
+		if(!empty($estado)) {
+			$datos['Base']['estado_n'] = $estado['Estado']['estado_n'];
+			$datos['Base']['municipio_n'] = $estado['Estado']['municipio_n'];
+		}
+	
+		// ==============================================
+		// CAMBIO PRINCIPAL: Lógica diferencial para nuevo vs edición
+		// ==============================================
+		$mover = 0; // Flag para nuevos registros
+		
+		if(empty($datos['Base']['id'])) {
+			// ==========================================
+			// CASO 1: NUEVO REGISTRO
+			// ==========================================
+			$datos['Base'] = array_reverse($datos['Base']);
+			array_pop($datos['Base']);
+			$this->Base->create();
+			
+			// Asignación de valores por defecto
+			$datos['Base']['lat'] = 23.6;
+			$datos['Base']['lng'] = -102.5;
+			$datos['Base']['nombre'] = utf8_decode($datos['Base']['nombre']);
+			
+			// Guardado PRINCIPAL para nuevo registro
+			$this->Base->save($datos);
+			
+			$mover = 1; // Activar flag de movimiento para nuevos registros
+		} else {
+			// ==========================================
+			// CASO 2: EDICIÓN DE REGISTRO EXISTENTE
+			// ==========================================
+			// Solo guardamos en el historial para ediciones
+			$this->guardarHistorial($datos['Base']);
+			
+			// Convertimos el nombre a formato correcto
+			$datos['Base']['nombre'] = utf8_decode($datos['Base']['nombre']);
+		}
+	
+		// ==============================================
+		// Resto de la lógica original (sin cambios)
+		// ==============================================
+		$mis_permisos = $this->Session->read('Usuario.permisos');
+		$permiso_editar = 0;
+		$c_permisos = explode("@", $mis_permisos);
+		if(array_search("Bases|add", $c_permisos) !== false) {
+			$permiso_editar = 1;
+		}
+	
+		configure::load("app/app"); 
+		$escuelas = configure::read("escuelas"); 
+		$distribuidores = $this->Escuela->Usuario->distribuidores();
+	
+		$cad = "<div style='width:200px;padding:10px;'>";
+	
+		if($datos['Base']['verificada'] == 2) {
+			$cad .= '<div style="position:absolute;left:5px;top:5px"><img src="/img/iconos/calificaciones.png"></div>';
+		}
+	
+		$cad .= "<span class='titulo_etiqueta'>Nombre:</span> ".utf8_encode($datos['Base']['nombre']);
+		$cad .= "<br><span class='titulo_etiqueta'>Estado:</span> ".utf8_encode($datos['Base']['estado_n']);
+		$cad .= "<br><span class='titulo_etiqueta'>Municipio:</span> ".utf8_encode($datos['Base']['municipio_n']);
+		$cad .= "<br><span class='titulo_etiqueta'>Tipo:</span> ".$datos['Base']['tipo'];
+		$cad .= "<br><span class='titulo_etiqueta'>Sector:</span> ".utf8_encode($datos['Base']['sector']);
+		$cad .= "<br><span class='titulo_etiqueta'>Turno:</span> ".$escuelas['turnos'][$datos['Base']['turno']];
+		$cad .= "<br><span class='titulo_etiqueta'>CCT:</span> ".$datos['Base']['cct'];
+		$cad .= "<br><span class='titulo_etiqueta'># De Alumnos:</span> ".$datos['Base']['alumnos'];
+		$cad .= "<br><span class='titulo_etiqueta'>Distribuidor:</span> ".$distribuidores[$datos['Base']['id_distribuidor']];
+	
+		if($permiso_editar == 1) {
+			$cad .= "<br><br><center><a href=javascript:editar_info(".$datos['Base']['id'].")>Editar información</a></center>";
+			$cad .= "<br><center><a href=javascript:mover_pin(".$datos['Base']['id'].")>Mover Pin</a></center>";
+		}
+	
+		$cad .= "</div>";
+		echo $cad;
+	
+		// Lógica de movimiento para nuevos registros (sin cambios)
+		if($mover) {
+			?>
+			<script>
+				document.getElementById("BaseCct").value='<?php echo $datos['Base']['cct']; ?>';
+				setTimeout('mover_pin(<?php echo $this->Base->id; ?>)',1000);
+			</script>
+			<?php
+		}
+		die;
+	}
+	function guardarHistorial($datos) {
+		// Configuración de la conexión a la base de datos
+		$db_host = 'localhost'; // Cambia esto según tu configuración
+		$db_name = 'prueba'; // Nombre de tu base de datos
+		$db_user = 'root'; // Usuario de la base de datos
+		$db_pass = 'root'; // Contraseña de la base de datos
+		
+		try {
+			// Conexión a la base de datos con PDO
+			$conn = new PDO("mysql:host=$db_host;dbname=$db_name", $db_user, $db_pass);
+			$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+			
+			$sql_check = "SELECT COUNT(*) as count FROM bases_historial WHERE id_original = :id";
+			$stmt_check = $conn->prepare($sql_check);
+			$stmt_check->bindParam(':id', $datos['id']);
+			$stmt_check->execute();
+			$result = $stmt_check->fetch(PDO::FETCH_ASSOC);
+			
+			// Si ya existe un registro, no hacemos la inserción
+			if ($result['count'] > 0) {
+				echo "<script>alert('Ya existe una edición pendiente. Por favor espere...');</script>";
+				return false; // O puedes lanzar una excepción o registrar un mensaje
+			}
+			
+
+			// Preparamos los datos para la inserción
+			$datos['nombre'] = utf8_decode($datos['nombre']);
+			$datos['fecha_modificacion'] = date('Y-m-d H:i:s');
+			$datos['usuario_modificacion'] = $this->Session->read('Usuario.id');
+			
+			// Consulta SQL para insertar en la tabla de historial
+			$sql = "INSERT INTO bases_historial (
+				id_original, cct, nombre, turno, tipo, sector, 
+				estado, estado_n, municipio, municipio_n, 
+				alumnos, lat, lng, id_distribuidor, grupos, nombre_contacto, telefono_contacto, correo_contacto, notas,
+				verificada, estatus, fecha_modificacion, usuario_modificacion
+			) VALUES (
+				:id, :cct, :nombre, :turno, :tipo, :sector, 
+				:estado, :estado_n, :municipio, :municipio_n, 
+				:alumnos, :lat, :lng, :id_distribuidor, :grupos, :nombre_contacto, :telefono_contacto, :correo_contacto, :notas,
+				:verificada, :estatus, :fecha_modificacion, :usuario_modificacion
+			)";
+			
+			$stmt = $conn->prepare($sql);
+			
+			// Bind de parámetros
+			$stmt->bindParam(':id', $datos['id']);
+			$stmt->bindParam(':cct', $datos['cct']);
+			$stmt->bindParam(':nombre', $datos['nombre']);
+			$stmt->bindParam(':turno', $datos['turno']);
+			$stmt->bindParam(':tipo', $datos['tipo']);
+			$stmt->bindParam(':sector', $datos['sector']);
+			$stmt->bindParam(':estado', $datos['estado']);
+			$stmt->bindParam(':estado_n', $datos['estado_n']);
+			$stmt->bindParam(':municipio', $datos['municipio']);
+			$stmt->bindParam(':municipio_n', $datos['municipio_n']);
+			$stmt->bindParam(':alumnos', $datos['alumnos']);
+			$stmt->bindParam(':lat', $datos['lat']);
+			$stmt->bindParam(':lng', $datos['lng']);
+			$stmt->bindParam(':id_distribuidor', $datos['id_distribuidor']);
+			$stmt->bindParam(':grupos', $datos['grupos']);
+			$stmt->bindParam(':nombre_contacto', $datos['nombre_contacto']);
+			$stmt->bindParam(':telefono_contacto', $datos['telefono_contacto']);
+			$stmt->bindParam(':correo_contacto', $datos['correo_contacto']);
+			$stmt->bindParam(':notas', $datos['notas']);
+			$stmt->bindParam(':verificada', $datos['verificada']);
+			$stmt->bindParam(':estatus', $datos['estatus']);
+			$stmt->bindParam(':fecha_modificacion', $datos['fecha_modificacion']);
+			$stmt->bindParam(':usuario_modificacion', $datos['usuario_modificacion']);
+			
+			// Ejecutar la consulta
+			$stmt->execute();
+			
+		} catch(PDOException $e) {
+			// Puedes loggear el error si lo deseas
+			error_log("Error al guardar historial: " . $e->getMessage());
+		}
+	}
+	
+	function mover_pin(){
+		$id=$this->params['form']['id'];
+		$base=$this->Base->read(null,$id);
+
+
+		$this->set("mover",1);
+		$this->set("bases",array(0=>$base));
+		$this->layout='ajax';
+		$this->render('filtros');
+
+	}
+
+	function guardar_pin(){
+		$datos=array();
+		$datos['Base']=$this->params['form'];
+		$this->Base->save($datos);
+		die;
+	}
+
+	function add(){
+	
+		$distribuidores=$this->Escuela->Usuario->distribuidores();
+		$this->set("distribuidores",$distribuidores);
+		$this->layout='ajax';
+		$this->render('edit');
+
+	}
+
+	function sin_coordenadas($paginado=null){
+
+		$this->paginate['conditions']=array('Base.lat'=>0);
+		$this->paginate['order']=array('Base.estado_n','Base.municipio_n','Base.nombre','Base.cct');
+
+		if(!empty($paginado))
+			$this->paginate['limit']=1000;
+		
+		$this->Base->recursive = 0;
+		$this->set('bases', $this->paginate());
+	}
+
+	function guardar_ruta(){
+		$datos=array();
+		$datos['Ruta']=$this->params['form'];
+		$datos['Ruta']['id_usuario']=$this->id_activo();
+		$this->Ruta->create();
+		$this->Ruta->save($datos);
+		die;
+	}
+	// function transferir_usuarios() {
+	// 	$this->layout = false;
+	// 	$this->autoRender = false; 
+
+	// 	$usuarios_raw = $this->Escuela->Usuario->find('all', array(
+	// 		'conditions' => array('Usuario.activo' => 1),
+	// 		'fields' => array('Usuario.id', 'Usuario.nombre','Usuario.apellido_p','Usuario.apellido_m'),
+	// 		'order' => array('Usuario.nombre' => 'ASC')
+	// 	));
+		
+	// 	$usuarios = array();
+	// 	foreach ($usuarios_raw as $u) {
+	// 		$usuarios[$u['Usuario']['id']] = trim(
+	// 			$u['Usuario']['nombre'] . ' ' . $u['Usuario']['apellido_p'] . ' ' . $u['Usuario']['apellido_m']
+	// 		);
+	// 	}
+		
+	// 	if (!empty($this->data)) {
+	// 		$id_usuario_viejo = $this->data['Base']['usuario_origen'];
+	// 		$id_usuario_nuevo = $this->data['Base']['usuario_destino'];
+			
+	// 		if ($id_usuario_viejo == $id_usuario_nuevo) {
+	// 			echo json_encode(array(
+	// 				'success' => false,
+	// 				'message' => 'El usuario origen y destino no pueden ser el mismo.'
+	// 			));
+	// 			return;
+	// 		}
+	// 		$dataSource = ConnectionManager::getDataSource('default');
+			
+	// 		try {
+	// 			$dataSource->begin();
+	// 			$this->Base->query("
+	// 				UPDATE bases 
+	// 				SET id_distribuidor = $id_usuario_nuevo 
+	// 				WHERE id_distribuidor = $id_usuario_viejo
+	// 			");
+	// 			$this->Escuela->query("
+	// 				UPDATE escuelas 
+	// 				SET id_distribuidor = $id_usuario_nuevo 
+	// 				WHERE id_distribuidor = $id_usuario_viejo
+	// 			");
+	// 			$this->Escuela->Usuario->query("
+	// 				UPDATE usuarios 
+	// 				SET activo = 1 
+	// 				WHERE id = $id_usuario_viejo
+	// 			");
+				
+	// 			$dataSource->commit();
+	// 			echo json_encode(array(
+	// 				'success' => true,
+	// 				'message' => 'Transferencia completada correctamente.'
+	// 			));
+	// 		} catch (Exception $e) {
+	// 			$dataSource->rollback();
+	// 			echo json_encode(array(
+	// 				'success' => false,
+	// 				'message' => 'Error al transferir datos: ' . $e->getMessage()
+	// 			));
+	// 		}
+	// 	} else {
+	// 		$this->set('usuarios', $usuarios);
+	// 		$this->render('transferir_usuarios');
+	// 	}
+	// }
+	public function contar_registros_transferencia_ajax() {
+        $this->layout = 'ajax'; // No usa layout completo
+        $this->autoRender = false; // No renderiza un archivo .ctp
+
+        // Para CakePHP 1.x, los parámetros GET están en $this->params['url']
+        $id_usuario_origen = isset($this->params['url']['usuario_origen']) ? intval($this->params['url']['usuario_origen']) : null;
+        $tipo = isset($this->params['url']['tipo']) ? $this->params['url']['tipo'] : null;
+        $turno = isset($this->params['url']['turno']) ? $this->params['url']['turno'] : null; // Será '1', '2', etc.
+        $sector = isset($this->params['url']['sector']) ? $this->params['url']['sector'] : null;
+
+        if (empty($id_usuario_origen)) {
+            echo json_encode(array(
+                'success' => false,
+                'message' => 'El Usuario Origen es obligatorio para el conteo.',
+                'count' => 0,
+                'total_alumnado' => 0 
+            ));
+            return;
+        }
+
+        $db = $this->Base->getDataSource();
+        $conditions = array();
+        $conditions[] = "id_distribuidor = " . $db->value($id_usuario_origen, 'integer');
+
+        if (!empty($tipo)) {
+            $conditions[] = "tipo = " . $db->value($tipo, 'string');
+        }
+        if (!empty($turno)) {
+            $conditions[] = "turno = " . $db->value($turno, 'string');
+        }
+        if (!empty($sector)) {
+            $conditions[] = "sector = " . $db->value($sector, 'string');
+        }
+        
+        $where_clause = implode(" AND ", $conditions);
+        $count = 0;
+        $total_alumnado = 0;
+
+        // La consulta se realiza sobre la tabla 'bases'
+        // COALESCE(SUM(alumnos), 0) asegura que si no hay registros o alumnos es NULL, devuelva 0.
+        $query_sql = "SELECT COUNT(*) as total_registros, COALESCE(SUM(alumnos), 0) as total_alumnado FROM bases WHERE " . $where_clause;
+        $result_array = $this->Base->query($query_sql);
+        
+        if (!empty($result_array) && isset($result_array[0][0])) {
+            $count = (int)$result_array[0][0]['total_registros'];
+            $total_alumnado = (int)$result_array[0][0]['total_alumnado'];
+        }
+        
+        echo json_encode(array(
+            'success' => true,
+            'count' => $count,
+            'total_alumnado' => $total_alumnado 
+        ));
+    }
+
+	function transferir_usuarios() {
+		$this->layout = false; 
+
+		$usuarios_raw = $this->Escuela->Usuario->find('all', array(
+			'conditions' => array('Usuario.activo' => 1),
+			'fields' => array('Usuario.id', 'Usuario.nombre', 'Usuario.apellido_p', 'Usuario.apellido_m'),
+			'order' => array('Usuario.nombre' => 'ASC', 'Usuario.apellido_p' => 'ASC')
+		));
+		
+		$usuariosOptions = array();
+		// Agregar la opción vacía primero si es para un select que puede no tener valor inicial
+        // $usuariosOptions[''] = '-- Selecciona Usuario --'; // Descomentar si es necesario para 'empty'
+		foreach ($usuarios_raw as $u) {
+			$usuariosOptions[$u['Usuario']['id']] = trim(
+				$u['Usuario']['nombre'] . ' ' . $u['Usuario']['apellido_p'] . ' ' . $u['Usuario']['apellido_m']
+			);
+		}
+		
+		$tiposOptions = array(
+			'' => '-- Todos los Tipos --',
+			'PREESCOLAR' => 'Preescolar',
+			'PRIMARIA' => 'Primaria',
+			'SECUNDARIA' => 'Secundaria'
+		);
+
+		$turnosOptions = array(
+			'' => '-- Todos los Turnos --',
+			'1' => 'Matutino',
+			'2' => 'Vespertino',
+			'3' => 'Nocturno',
+			'4' => 'Discontinuo',
+			'5' => 'Continuo'
+		);
+
+		$sectoresOptions = array(
+			'' => '-- Todos los Sectores --',
+			'PÚBLICO' => 'Público',
+			'PRIVADO' => 'Privado'
+		);
+
+		if (!empty($this->data)) { 
+			$this->autoRender = false; 
+
+			$id_usuario_origen = isset($this->data['Base']['usuario_origen']) ? intval($this->data['Base']['usuario_origen']) : null;
+			$id_usuario_destino = isset($this->data['Base']['usuario_destino']) ? intval($this->data['Base']['usuario_destino']) : null;
+			
+			$tipo_filtro = isset($this->data['Base']['tipo_filtro']) ? $this->data['Base']['tipo_filtro'] : null;
+			$turno_filtro = isset($this->data['Base']['turno_filtro']) ? $this->data['Base']['turno_filtro'] : null;
+			$sector_filtro = isset($this->data['Base']['sector_filtro']) ? $this->data['Base']['sector_filtro'] : null;
+
+			if (empty($id_usuario_origen) || empty($id_usuario_destino)) {
+				echo json_encode(array(
+					'success' => false,
+					'message' => 'Debe seleccionar un usuario origen y un usuario destino.'
+				));
+				return;
+			}
+			
+			if ($id_usuario_origen == $id_usuario_destino) {
+				echo json_encode(array(
+					'success' => false,
+					'message' => 'El usuario origen y destino no pueden ser el mismo.'
+				));
+				return;
+			}
+
+			$dataSource = ConnectionManager::getDataSource('default'); 
+			$db = $this->Base->getDataSource(); 
+
+			$conditions_transfer = array();
+			$conditions_transfer[] = "id_distribuidor = " . $db->value($id_usuario_origen, 'integer');
+
+			if (!empty($tipo_filtro)) {
+				$conditions_transfer[] = "tipo = " . $db->value($tipo_filtro, 'string');
+			}
+			if (!empty($turno_filtro)) {
+				$conditions_transfer[] = "turno = " . $db->value($turno_filtro, 'string');
+			}
+			if (!empty($sector_filtro)) {
+				$conditions_transfer[] = "sector = " . $db->value($sector_filtro, 'string');
+			}
+			$where_clause_transfer = implode(" AND ", $conditions_transfer);
+			
+			try {
+				$dataSource->begin(); 
+
+				$update_bases_sql = "UPDATE bases SET id_distribuidor = " . $db->value($id_usuario_destino, 'integer') . " WHERE " . $where_clause_transfer;
+				$this->Base->query($update_bases_sql);
+				$affected_bases = $this->Base->getAffectedRows();
+
+				$update_escuelas_sql = "UPDATE escuelas SET id_distribuidor = " . $db->value($id_usuario_destino, 'integer') . " WHERE " . $where_clause_transfer;
+				$this->Escuela->query($update_escuelas_sql);
+				$affected_escuelas = $this->Escuela->getAffectedRows();
+
+				$this->Escuela->Usuario->query("
+					UPDATE usuarios 
+					SET activo = 1 
+					WHERE id = " . $db->value($id_usuario_origen, 'integer')
+				);
+				
+				$dataSource->commit(); 
+				echo json_encode(array(
+					'success' => true,
+					'message' => "Transferencia completada. Registros afectados en Bases: $affected_bases, en Escuelas: $affected_escuelas."
+				));
+			} catch (Exception $e) {
+				$dataSource->rollback(); 
+				echo json_encode(array(
+					'success' => false,
+					'message' => 'Error al transferir datos: ' . $e->getMessage()
+				));
+			}
+			return; 
+		} 
+		
+		$this->set(compact('usuariosOptions', 'tiposOptions', 'turnosOptions', 'sectoresOptions'));
+		$this->render('transferir_usuarios'); 
+	}
+	// function asignar_distribuidor_estado() {
+	// 	$this->layout = false;
+	// 	$this->autoRender = false;
+	// 	if (!empty($this->data)) {
+	// 		$estado_origen = intval($this->data['Base']['estado_origen']);
+	// 		$id_usuario_nuevo = intval($this->data['Base']['id_usuario_nuevo']);
+			
+	// 		$query = "UPDATE bases SET id_distribuidor = {$id_usuario_nuevo} WHERE estado = {$estado_origen}";
+	// 		$result = $this->Base->query($query);
+			
+	// 		if ($result !== false) {
+	// 			$filas_afectadas = $this->Base->getAffectedRows();
+	// 			echo json_encode(array(
+	// 				'success' => true,
+	// 				'message' => "✔ Distribuidor asignado correctamente a $filas_afectadas registros."
+	// 			));
+	// 		} else {
+	// 			$error = $this->Base->getDataSource()->lastError();
+	// 			echo json_encode(array(
+	// 				'success' => false,
+	// 				'message' => "❌ Error al asignar distribuidor: " . $error
+	// 			));
+	// 		}
+	// 		return;
+	// 	}
+	// 	$estados = $this->Estado->query("
+	// 		SELECT estado, estado_n 
+	// 		FROM estados 
+	// 		GROUP BY estado_n 
+	// 		ORDER BY estado_n
+	// 	");
+		
+	// 	$estadosOptions = array('' => '-- Selecciona un estado --');
+	// 	foreach ($estados as $estado) {
+	// 		$estadosOptions[$estado['estados']['estado']] = $estado['estados']['estado_n'];
+	// 	}
+	// 	$usuarios = $this->Escuela->Usuario->query("
+	// 		SELECT id, nombre, apellido_p, apellido_m 
+	// 		FROM usuarios 
+	// 		ORDER BY nombre
+	// 	");
+		
+	// 	$usuariosOptions = array('' => '-- Selecciona un usuario --');
+	// 	foreach ($usuarios as $usuario) {
+	// 		$nombre_completo = trim(
+	// 			$usuario['usuarios']['nombre'] . ' ' .
+	// 			$usuario['usuarios']['apellido_p'] . ' ' .
+	// 			$usuario['usuarios']['apellido_m']
+	// 		);
+	// 		$usuariosOptions[$usuario['usuarios']['id']] = $nombre_completo;
+	// 	}
+	
+	// 	$this->set(compact('estadosOptions', 'usuariosOptions'));
+	// 	$this->render('asignar_distribuidor_estado');
+	// }
+	public function contar_registros_ajax() {
+        $this->layout = 'ajax'; // No usa layout completo
+        $this->autoRender = false; // No renderiza un archivo .ctp
+
+        // Para CakePHP 1.x, los parámetros GET están en $this->params['url']
+        $estado_origen = isset($this->params['url']['estado_origen']) ? intval($this->params['url']['estado_origen']) : null;
+        $tipo = isset($this->params['url']['tipo']) ? $this->params['url']['tipo'] : null;
+        $turno = isset($this->params['url']['turno']) ? $this->params['url']['turno'] : null;
+        $sector = isset($this->params['url']['sector']) ? $this->params['url']['sector'] : null;
+
+        if (empty($estado_origen)) {
+            echo json_encode(array(
+                'success' => false,
+                'message' => 'El estado es obligatorio.',
+                'count' => 0,
+                'total_alumnado' => 0 // Aseguramos que siempre exista este campo en la respuesta
+            ));
+            return;
+        }
+
+        $db = $this->Base->getDataSource();
+        $conditions = array();
+        $conditions[] = "estado = " . $db->value($estado_origen, 'integer');
+
+        if (!empty($tipo)) {
+            $conditions[] = "tipo = " . $db->value($tipo, 'string');
+        }
+        if (!empty($turno)) {
+            // La columna 'turno' en la BD debe ser compatible con '1', '2', etc.
+            $conditions[] = "turno = " . $db->value($turno, 'string');
+        }
+        if (!empty($sector)) {
+            $conditions[] = "sector = " . $db->value($sector, 'string');
+        }
+        
+        $where_clause = implode(" AND ", $conditions);
+        $count = 0;
+        $total_alumnado = 0; // Inicializar el total de alumnado
+
+        if (!empty($where_clause)) {
+            // Modificamos la consulta para obtener COUNT(*) y SUM(alumnos)
+            // Usamos COALESCE para asegurar que SUM(alumnos) devuelva 0 si no hay registros o todos los alumnos son NULL
+            $query_sql = "SELECT COUNT(*) as total_registros, COALESCE(SUM(alumnos), 0) as total_alumnado FROM bases WHERE " . $where_clause;
+            $result_array = $this->Base->query($query_sql);
+            
+            if (!empty($result_array) && isset($result_array[0][0])) {
+                $count = (int)$result_array[0][0]['total_registros'];
+                $total_alumnado = (int)$result_array[0][0]['total_alumnado']; // Obtenemos la suma del alumnado
+            }
+        }
+        
+        // Devolvemos ambos datos en la respuesta JSON
+        echo json_encode(array(
+            'success' => true,
+            'count' => $count,
+            'total_alumnado' => $total_alumnado 
+        ));
+    }
+
+	// public function contar_registros_ajax() {
+    //     $this->layout = 'ajax'; // No usa layout completo
+    //     $this->autoRender = false; // No renderiza un archivo .ctp
+
+    //     // Para CakePHP 1.x, los parámetros GET están en $this->params['url']
+    //     $estado_origen = isset($this->params['url']['estado_origen']) ? intval($this->params['url']['estado_origen']) : null;
+    //     $tipo = isset($this->params['url']['tipo']) ? $this->params['url']['tipo'] : null;
+    //     // El valor de 'turno' será '1', '2', etc. según tus $turnosOptions
+    //     $turno = isset($this->params['url']['turno']) ? $this->params['url']['turno'] : null;
+    //     $sector = isset($this->params['url']['sector']) ? $this->params['url']['sector'] : null;
+
+    //     if (empty($estado_origen)) {
+    //         echo json_encode(array('success' => false, 'message' => 'El estado es obligatorio.', 'count' => 0));
+    //         return;
+    //     }
+
+    //     $db = $this->Base->getDataSource();
+    //     $conditions = array();
+    //     $conditions[] = "estado = " . $db->value($estado_origen, 'integer');
+
+    //     if (!empty($tipo)) {
+    //         $conditions[] = "tipo = " . $db->value($tipo, 'string');
+    //     }
+    //     if (!empty($turno)) {
+    //         // La columna 'turno' en la BD debe ser compatible con '1', '2', etc.
+    //         $conditions[] = "turno = " . $db->value($turno, 'string');
+    //     }
+    //     if (!empty($sector)) {
+    //         $conditions[] = "sector = " . $db->value($sector, 'string');
+    //     }
+        
+    //     $where_clause = implode(" AND ", $conditions);
+    //     $count = 0;
+
+    //     if (!empty($where_clause)) { // Aunque 'estado' es obligatorio, es buena práctica chequear
+    //         $count_query = "SELECT COUNT(*) as total_registros FROM bases WHERE " . $where_clause;
+    //         $count_result_array = $this->Base->query($count_query);
+            
+    //         if (!empty($count_result_array) && isset($count_result_array[0][0]['total_registros'])) {
+    //             $count = (int)$count_result_array[0][0]['total_registros'];
+    //         }
+    //     }
+        
+    //     echo json_encode(array('success' => true, 'count' => $count));
+    //     // No es necesario 'return;' aquí porque autoRender es false y esto es lo último.
+    // }
+	function asignar_distribuidor_estado() {
+		$this->layout = false;
+		$this->autoRender = false;
+
+		if (!empty($this->data)) { // Handles POST request
+			$estado_origen = intval($this->data['Base']['estado_origen']);
+			$id_usuario_nuevo = intval($this->data['Base']['id_usuario_nuevo']);
+			$tipo = $this->data['Base']['tipo']; // New field
+			$turno = $this->data['Base']['turno']; // New field
+			$sector = $this->data['Base']['sector']; // New field
+			
+			$db = $this->Base->getDataSource();
+			$conditions = array();
+			// Always filter by estado
+			$conditions[] = "estado = " . $db->value($estado_origen, 'integer');
+
+			// Add conditions for new filters if a specific option is selected (not "Todos")
+			if (!empty($tipo)) {
+				$conditions[] = "tipo = " . $db->value($tipo, 'string');
+			}
+			if (!empty($turno)) {
+				$conditions[] = "turno = " . $db->value($turno, 'string');
+			}
+			if (!empty($sector)) {
+				// Assuming DB stores 'PÚBLICO' with accent based on other controller actions
+				$conditions[] = "sector = " . $db->value($sector, 'string');
+			}
+			
+			$where_clause = implode(" AND ", $conditions);
+			$query = "UPDATE bases SET id_distribuidor = " . $db->value($id_usuario_nuevo, 'integer') . " WHERE " . $where_clause;
+			
+			$result = $this->Base->query($query);
+			
+			if ($result !== false) {
+				$filas_afectadas = $this->Base->getAffectedRows();
+				echo json_encode(array(
+					'success' => true,
+					'message' => "✔ Distribuidor asignado correctamente a $filas_afectadas registros."
+				));
+			} else {
+				$error = $this->Base->getDataSource()->lastError(); // Get specific DB error
+				echo json_encode(array(
+					'success' => false,
+					'message' => "❌ Error al asignar distribuidor: " . $error
+				));
+			}
+			return; // Stop further execution for POST requests
+		}
+
+		// Handles GET request (displaying the form)
+		$estados = $this->Estado->query("
+			SELECT estado, estado_n 
+			FROM estados 
+			GROUP BY estado_n 
+			ORDER BY estado_n
+		");
+		
+		$estadosOptions = array('' => '-- Selecciona un estado --');
+		foreach ($estados as $estado) {
+			$estadosOptions[$estado['estados']['estado']] = $estado['estados']['estado_n'];
+		}
+
+		$usuarios = $this->Escuela->Usuario->query("
+			SELECT id, nombre, apellido_p, apellido_m 
+			FROM usuarios 
+			WHERE activo = 1
+			ORDER BY nombre, apellido_p, apellido_m
+		");
+		
+		$usuariosOptions = array('' => '-- Selecciona un usuario --');
+		foreach ($usuarios as $usuario) {
+			$nombre_completo = trim(
+				$usuario['usuarios']['nombre'] . ' ' .
+				$usuario['usuarios']['apellido_p'] . ' ' .
+				$usuario['usuarios']['apellido_m']
+			);
+			$usuariosOptions[$usuario['usuarios']['id']] = $nombre_completo;
+		}
+
+		// Define options for the new dropdowns
+		$tiposOptions = array(
+			'' => '-- Todos los Tipos --', // Value '' for "Todos"
+			'PREESCOLAR' => 'Preescolar',
+			'PRIMARIA' => 'Primaria',
+			'SECUNDARIA' => 'Secundaria'
+			// Add other types if necessary, ensure these values match DB storage
+		);
+
+		$turnosOptions = array(
+			'' => '-- Todos los Turnos --',
+			'1' => 'Matutino',
+			'2' => 'Vespertino',
+			'3' => 'Nocturno',
+			'4' => 'Discontinuo',
+			'5' => 'Continuo'
+			// Ensure these values match DB storage (e.g., from $config['escuelas']['turnos'])
+		);
+
+		$sectoresOptions = array(
+			'' => '-- Todos los Sectores --',
+			'PÚBLICO' => 'Público', // Assuming 'PÚBLICO' with accent is stored
+			'PRIVADO' => 'Privado'
+		);
+	
+		$this->set(compact('estadosOptions', 'usuariosOptions', 'tiposOptions', 'turnosOptions', 'sectoresOptions'));
+		$this->render('asignar_distribuidor_estado'); // Render the .ctp view file
+	}
+}
+?>

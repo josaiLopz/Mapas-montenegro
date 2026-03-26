@@ -109,13 +109,13 @@
                                         ) ?>
                                         <?= $this->Form->postLink(
                                             '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3l6.3 6.3 6.3-6.3 1.4 1.4Z"></path></svg>',
-                                            ['action' => 'delete', $user->id],
+                                            ['action' => 'delete', $user->id, '?' => ['redirect' => $this->request->getRequestTarget()]],
                                             [
                                                 'class' => 'button button-small button-danger button-icon',
                                                 'escape' => false,
                                                 'aria-label' => 'Eliminar usuario',
                                                 'title' => 'Eliminar usuario',
-                                                'confirm' => 'Â¿Seguro que deseas eliminarlo?',
+                                                'confirm' => '¿Seguro que deseas eliminarlo?',
                                             ]
                                         ) ?>
                                     </td>

@@ -54,7 +54,20 @@
                 'hiddenField' => true,
             ]) ?>
         </div>
+        
+        <h4>Cambiar contraseña (opcional)</h4>
 
+<?= $this->Form->control('new_password', [
+    'type' => 'password',
+    'label' => 'Nueva contraseña',
+    'required' => false,
+]) ?>
+
+<?= $this->Form->control('confirm_password', [
+    'type' => 'password',
+    'label' => 'Confirmar contraseña',
+    'required' => false,
+]) ?>
         <div class="user-form-actions">
             <?= $this->Form->button('Actualizar', ['class' => 'button button-primary']) ?>
             <?= $this->Html->link('Cancelar', ['action' => 'index'], ['class' => 'button button-secondary']) ?>

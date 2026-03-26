@@ -3,7 +3,12 @@ declare(strict_types=1);
 
 namespace App\Controller;
 use Authentication\PasswordHasher\DefaultPasswordHasher;
+use Cake\Mailer\MailerAwareTrait;
+
 use Cake\ORM\TableRegistry;
+use Cake\Utility\Security;
+use Cake\Routing\Router;
+use Cake\I18n\FrozenTime;
 /**
  * @property \Authentication\Controller\Component\AuthenticationComponent $Authentication
  *
@@ -13,6 +18,11 @@ use Cake\ORM\TableRegistry;
  */
 class UsersController extends AppController
 {
+    use MailerAwareTrait;
+    /**
+ * @property \App\Model\Table\UserAuditsTable $UserAudits
+ */
+protected $UserAudits;
     /**
      * Initialize controller
      *
@@ -22,8 +32,8 @@ class UsersController extends AppController
     {
         parent::initialize();
         $this->loadComponent('Authentication.Authentication');
-
         $this->Authentication->allowUnauthenticated(['login']);
+        $this->UserAudits = $this->fetchTable('UserAudits');
     }
 
     /**
@@ -33,53 +43,70 @@ class UsersController extends AppController
      */
     public function index()
     {
-    $roles = $this->Users->Roles->find('list')->toArray();
-
-    $query = $this->Users->find()->contain(['Roles']);
-         // Aplicar filtros si existen
-    $filters = $this->request->getQueryParams();
-
-    if (!empty($filters['nombre_completo'])) {
-        $fullName = trim((string)$filters['nombre_completo']);
-        $parts = preg_split('/\s+/', $fullName) ?: [];
-
-        foreach ($parts as $part) {
-            $term = trim((string)$part);
-            if ($term === '') {
-                continue;
-            }
-
-            $likeTerm = '%' . $term . '%';
-            $query->where([
-                'OR' => [
-                    'Users.name LIKE' => $likeTerm,
-                    'Users.apellido_paterno LIKE' => $likeTerm,
-                    'Users.apellido_materno LIKE' => $likeTerm,
-                ],
-            ]);
+        // id del rol Administrador
+        $adminRoleId = $this->Users->Roles->find()
+            ->select(['id'])
+            ->where(['name' => 'Administrador'])
+            ->first()?->id;
+    
+        // role del usuario logueado
+        $identity = $this->request->getAttribute('identity'); // <- si no usas Authentication, cambia esta línea
+        $loggedRoleId = $identity ? (int)$identity->get('role_id') : null;
+    
+        // Roles para filtro
+        $roles = $this->Users->Roles->find('list')->toArray();
+        if ($adminRoleId && (int)$loggedRoleId !== (int)$adminRoleId) {
+            unset($roles[$adminRoleId]); // no-admin no puede ni filtrar por Admin
         }
+    
+        $query = $this->Users->find()->contain(['Roles']);
+    
+        // EXCLUIR admins solo si NO soy admin
+        if ($adminRoleId && (int)$loggedRoleId !== (int)$adminRoleId) {
+            $query->where(['Users.role_id !=' => $adminRoleId]);
+        }
+    
+        // Filtros
+        $filters = $this->request->getQueryParams();
+    
+        if (!empty($filters['nombre_completo'])) {
+            $fullName = trim((string)$filters['nombre_completo']);
+            $parts = preg_split('/\s+/', $fullName) ?: [];
+    
+            foreach ($parts as $part) {
+                $term = trim((string)$part);
+                if ($term === '') continue;
+    
+                $likeTerm = '%' . $term . '%';
+                $query->where([
+                    'OR' => [
+                        'Users.name LIKE' => $likeTerm,
+                        'Users.apellido_paterno LIKE' => $likeTerm,
+                        'Users.apellido_materno LIKE' => $likeTerm,
+                    ],
+                ]);
+            }
+        }
+    
+        if (!empty($filters['email'])) {
+            $query->where(['Users.email LIKE' => '%' . $filters['email'] . '%']);
+        }
+    
+        if (!empty($filters['usern'])) {
+            $query->where(['Users.usern LIKE' => '%' . $filters['usern'] . '%']);
+        }
+    
+        if (!empty($filters['role_id'])) {
+            $query->where(['Users.role_id' => $filters['role_id']]);
+        }
+    
+        if (isset($filters['activo']) && $filters['activo'] !== '') {
+            $query->where(['Users.activo' => $filters['activo']]);
+        }
+    
+        $users = $this->paginate($query);
+        $this->set(compact('users', 'roles'));
     }
-    if (!empty($filters['email'])) {
-        $query->where(['Users.email LIKE' => '%' . $filters['email'] . '%']);
-    }
-    if (!empty($filters['usern'])) {
-        $query->where(['Users.usern LIKE' => '%' . $filters['usern'] . '%']);
-    }
-    if (!empty($filters['role_id'])) {
-        $query->where(['Users.role_id' => $filters['role_id']]);
-    }
-    if (isset($filters['activo']) && $filters['activo'] !== '') {
-        $query->where(['Users.activo' => $filters['activo']]);
-    }
-    $users = $this->paginate($query);
-           $this->set(compact('users', 'roles'));
-
-        // $query = $this->Users->find();
-        // $users = $this->paginate($query);
-
-        // $this->set(compact('users'));
-    }
-
     /**
      * View method
      *
@@ -107,30 +134,42 @@ class UsersController extends AppController
      */
     public function add()
     {
-         $user = $this->Users->newEmptyEntity();
-            if ($this->request->is('post')) {
-                $data = $this->request->getData();
-                $user = $this->Users->patchEntity($user, $data);
-                if ($this->Users->save($user)) {
-                    $this->Flash->success('Usuario creado correctamente');
+        $user = $this->Users->newEmptyEntity();
+    
+        $adminRoleId = $this->Users->Roles->find()
+            ->select(['id'])
+            ->where(['name' => 'Administrador'])
+            ->first()?->id;
+    
+        $identity = $this->request->getAttribute('identity'); // <- ajusta si no usas Authentication
+        $loggedRoleId = $identity ? (int)$identity->get('role_id') : null;
+    
+        $roles = $this->Users->Roles->find('list')->toArray();
+        if ($adminRoleId && (int)$loggedRoleId !== (int)$adminRoleId) {
+            unset($roles[$adminRoleId]);
+        }
+    
+        if ($this->request->is('post')) {
+            $data = $this->request->getData();
+    
+            // Bloqueo de seguridad: no-admin no puede asignar Administrador aunque lo envíe a mano
+            if ($adminRoleId && (int)$loggedRoleId !== (int)$adminRoleId) {
+                if ((int)($data['role_id'] ?? 0) === (int)$adminRoleId) {
+                    $this->Flash->error('No tienes permisos para asignar el rol Administrador.');
                     return $this->redirect(['action' => 'index']);
                 }
-                $this->Flash->error('Error al crear usuario');
             }
-            $roles = $this->Users->Roles->find('list');
-            $this->set(compact('user','roles'));
-            $this->render('add');
-        // $user = $this->Users->newEmptyEntity();
-        // if ($this->request->is('post')) {
-        //     $user = $this->Users->patchEntity($user, $this->request->getData());
-        //     if ($this->Users->save($user)) {
-        //         $this->Flash->success(__('The user has been saved.'));
-
-        //         return $this->redirect(['action' => 'index']);
-        //     }
-        //     $this->Flash->error(__('The user could not be saved. Please, try again.'));
-        // }
-        // $this->set(compact('user'));
+    
+            $user = $this->Users->patchEntity($user, $data);
+    
+            if ($this->Users->save($user)) {
+                $this->Flash->success('Usuario creado correctamente');
+                return $this->redirect(['action' => 'index']);
+            }
+            $this->Flash->error('Error al crear usuario');
+        }
+    
+        $this->set(compact('user', 'roles'));
     }
 
     /**
@@ -143,18 +182,64 @@ class UsersController extends AppController
     public function edit($id = null)
     {
         $user = $this->Users->get($id);
+    
+        $adminRoleId = $this->Users->Roles->find()
+            ->select(['id'])
+            ->where(['name' => 'Administrador'])
+            ->first()?->id;
+    
+        $identity = $this->request->getAttribute('identity'); // <- ajusta si no usas Authentication
+        $loggedRoleId = $identity ? (int)$identity->get('role_id') : null;
+    
+        $roles = $this->Users->Roles->find('list')->toArray();
+        if ($adminRoleId && (int)$loggedRoleId !== (int)$adminRoleId) {
+            unset($roles[$adminRoleId]);
+        }
+    
         if ($this->request->is(['patch','post','put'])) {
-            $user = $this->Users->patchEntity($user, $this->request->getData());
+            $data = $this->request->getData();
+    
+            // Bloqueo de seguridad
+            if ($adminRoleId && (int)$loggedRoleId !== (int)$adminRoleId) {
+                if ((int)($data['role_id'] ?? 0) === (int)$adminRoleId) {
+                    $this->Flash->error('No tienes permisos para asignar el rol Administrador.');
+                    return $this->redirect(['action' => 'index']);
+                }
+            }
+    
+            $newPassword = trim((string)($data['new_password'] ?? ''));
+            $confirmPassword = trim((string)($data['confirm_password'] ?? ''));
+    
+            unset($data['new_password'], $data['confirm_password']);
+    
+            if ($newPassword !== '') {
+                if (strlen($newPassword) < 8) {
+                    $this->Flash->error('La contraseña debe tener mínimo 8 caracteres.');
+                    $this->set(compact('user', 'roles'));
+                    return;
+                }
+    
+                if ($newPassword !== $confirmPassword) {
+                    $this->Flash->error('Las contraseñas no coinciden.');
+                    $this->set(compact('user', 'roles'));
+                    return;
+                }
+    
+                $data['password'] = $newPassword;
+            }
+    
+            $user = $this->Users->patchEntity($user, $data);
+    
             if ($this->Users->save($user)) {
                 $this->Flash->success('Usuario actualizado correctamente');
                 return $this->redirect(['action'=>'index']);
             }
+    
             $this->Flash->error('Error al actualizar usuario');
         }
-        $roles = $this->Users->Roles->find('list');
-        $this->set(compact('user','roles'));
+    
+        $this->set(compact('user', 'roles'));
     }
-
     /**
      * Delete method
      *
@@ -164,16 +249,25 @@ class UsersController extends AppController
      */
     public function delete($id = null)
     {
-        $this->request->allowMethod(['post','delete']);
+        $this->request->allowMethod(['post', 'delete']);
+
+        // --- borrar ---
         $user = $this->Users->get($id);
+    
         if ($this->Users->delete($user)) {
             $this->Flash->success('Usuario eliminado');
         } else {
             $this->Flash->error('Error al eliminar usuario');
         }
-        return $this->redirect(['action'=>'index']);
+    
+        // volver a la misma pagina/filtros si venia redirect
+        $redirect = (string)$this->request->getQuery('redirect');
+        if ($redirect !== '' && str_starts_with($redirect, '/')) {
+            return $this->redirect($redirect);
+        }
+    
+        return $this->redirect(['action' => 'index']);
     }
-
     /**
      * Login method
      *
@@ -210,7 +304,7 @@ class UsersController extends AppController
     public function beforeFilter(\Cake\Event\EventInterface $event)
     {
         parent::beforeFilter($event);
-        $this->Authentication->addUnauthenticatedActions(['login']);
+        $this->Authentication->addUnauthenticatedActions(['login', 'forgotPassword', 'resetPassword']);
     }
 
     public function profile()
@@ -300,7 +394,7 @@ public function editProfile()
         }
 
         if ($this->Users->save($user)) {
-            $this->UserAudits = TableRegistry::getTableLocator()->get('UserAudits');
+            
             $audit = $this->UserAudits->newEntity([
                 'user_id'      => $user->id,
                 'action'       => 'edit_profile',
@@ -353,5 +447,83 @@ public function editProfile()
     // {
     //     return true; 
     // }
-    
+     public function forgotPassword()
+{
+    if ($this->request->is('post')) {
+        $email = mb_strtolower(trim((string)$this->request->getData('email')), 'UTF-8');
+
+        // Validación básica
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->Flash->success('Si tu correo electrónico se encuentra en nuestros registros, recibirás un enlace para restablecer tu contraseña.');
+            return $this->redirect(['action' => 'login']);
+        }
+
+        // Búsqueda case-insensitive (funciona bien en MySQL)
+        $user = $this->Users->find()
+            ->where(['LOWER(Users.email) =' => $email])
+            ->first();
+
+        if ($user) {
+            $token = Security::randomString(64);
+
+            $passwordResetTokensTable = $this->fetchTable('PasswordResetTokens');
+            $passwordResetTokensTable->deleteAll(['user_id' => $user->id]);
+
+            $resetToken = $passwordResetTokensTable->newEntity([
+                'user_id' => $user->id,
+                'token' => hash('sha256', $token),
+                'expires_at' => new FrozenTime('+1 hour'),
+            ]);
+
+            if ($passwordResetTokensTable->save($resetToken)) {
+                $resetLink = Router::url(['controller' => 'Users', 'action' => 'resetPassword', $token], true);
+                $this->getMailer('User')->send('passwordReset', [$user, $resetLink]);
+            }
+        }
+
+        $this->Flash->success('Si tu correo electrónico se encuentra en nuestros registros, recibirás un enlace para restablecer tu contraseña.');
+        return $this->redirect(['action' => 'login']);
+    }
+}
+
+    public function resetPassword($token = null)
+    {
+        if (!$token) {
+            $this->Flash->error('Token no válido o ausente.');
+            return $this->redirect(['action' => 'login']);
+        }
+
+        $hashedToken = hash('sha256', $token);
+        $passwordResetTokensTable = $this->fetchTable('PasswordResetTokens');
+        $resetToken = $passwordResetTokensTable->find()
+            ->where([
+                'token' => $hashedToken,
+                'expires_at >' => FrozenTime::now()
+            ])
+            ->contain(['Users'])
+            ->first();
+
+        if (!$resetToken || !$resetToken->user) {
+            $this->Flash->error('El token de recuperación es inválido o ha expirado.');
+            return $this->redirect(['action' => 'login']);
+        }
+
+        $user = $resetToken->user;
+
+        if ($this->request->is(['post', 'put'])) {
+            // patchEntity usará las reglas de validación de la entidad User
+            // para verificar que la contraseña y su confirmación coinciden.
+            $user = $this->Users->patchEntity($user, $this->request->getData());
+
+            if ($this->Users->save($user)) {
+                // Eliminar el token usado
+                $passwordResetTokensTable->delete($resetToken);
+                $this->Flash->success('Tu contraseña ha sido restablecida. Ahora puedes iniciar sesión.');
+                return $this->redirect(['action' => 'login']);
+            }
+            $this->Flash->error('No se pudo cambiar la contraseña. Por favor, intenta de nuevo.');
+        }
+
+        $this->set('user', $user);
+    }
 }

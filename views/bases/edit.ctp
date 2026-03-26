@@ -1,0 +1,158 @@
+<div>
+  <?php
+
+
+
+configure::load("app/app"); 
+$escuelas=configure::read("escuelas"); 
+$estados=configure::read("estados"); 
+$escuelas['grupos']=array();
+for($i=0;$i<51;$i++)
+  $escuelas['grupos'][$i]=$i;
+
+         echo $form->create('Base1',array('action'=>'index','onsubmit'=>'return enviar_datos_escuela()'));
+
+         echo '<div class="row justify-content-center">';
+      	
+         echo '<div class="col-lg-3 col-md-3 ">';
+         echo $form->input("nombre",array('style'=>"width:100%"));
+        echo '<br></div>';
+
+        echo '<div class="col-lg-3 col-md-3 ">';
+           echo $form->input("estado",array('style'=>"width:100%",'type'=>'select','options'=>$estados));
+        echo '<br></div>';
+
+        echo '<div class="col-lg-3 col-md-3 ">';
+              echo $form->input("municipio",array('style'=>"width:100%",'type'=>'select','options'=>array('0'=>'Cualquiera')));
+       echo '</div>';
+        
+        echo '<div class="col-lg-3 col-md-3 ">';
+        echo $form->input("tipo",array('style'=>"width:100%",'type'=>'select','options'=>$escuelas['tipos']));
+        echo '</div>';
+
+
+        echo '<div class="col-lg-3 col-md-3 ">';
+        echo $form->input("sector",array('style'=>"width:100%",'type'=>'select','options'=>$escuelas['sectores']));
+        echo '<br></div>';
+        
+        echo '<div class="col-lg-3 col-md-3 ">';
+        echo $form->input("turno",array('style'=>"width:100%",'type'=>'select','options'=>$escuelas['turnos']));
+        echo '</div>';
+        
+        
+        echo '<div class="col-lg-3 col-md-3 ">';
+        echo $form->input("alumnos",array('style'=>"width:100%",'label'=>'# De Alumnos'));
+        echo '</div>';
+
+        echo '<div class="col-lg-3 col-md-3 ">';
+        echo $form->input("grupos",array('label'=>'# de grupos','style'=>"width:100%",'type'=>'select','options'=>$escuelas['grupos']));
+        echo '</div>';
+
+        echo '<div class="col-lg-3 col-md-3 ">';
+        echo $form->input("id_distribuidor",array('style'=>"width:100%",'type'=>'select','options'=>$distribuidores,'label'=>'Distribuidor'));
+        echo '</div>';
+
+        echo '<div class="col-lg-3 col-md-3 ">';
+        echo $form->input("cct",array('style'=>"width:100%",'label'=>'CCT'));
+        echo '<br></div>';
+
+
+          echo '<div class="col-lg-3 col-md-3 ">';
+          echo $form->input("nombre_contacto",array('style'=>"width:100%",'label'=>'Nombre de contacto'));
+          echo '</div>';
+
+
+          echo '<div class="col-lg-3 col-md-3 ">';
+          echo $form->input("telefono_contacto",array('style'=>"width:100%",'label'=>'Tel&eacute;fono de contacto'));
+          echo '</div>';
+
+          echo '<div class="col-lg-3 col-md-3 ">';
+          echo $form->input("correo_contacto",array('style'=>"width:100%",'label'=>'Correo de contacto'));
+          echo '</div>';
+
+
+          echo '<div class="col-lg-3 col-md-3 ">';
+          echo $form->input("estatus",array('style'=>"width:100%",'type'=>'select','options'=>$escuelas['estatus'],'label'=>'Estatus'));
+          echo '</div>';
+
+          if($user_rol==1){
+          echo '<div class="col-lg-3 col-md-3 ">';
+          echo $form->input("verificada",array('style'=>"width:100%",'type'=>'select','options'=>$escuelas['verificada'],'label'=>'Escuela verificada'));
+          echo '</div>';
+          }
+
+          echo '<div class="col-lg-3 col-md-3">';
+echo $form->label('notas', 'Notas');
+echo $form->textarea('notas', array(
+    'style' => 'width:100%; height:100px;',
+));
+echo '</div>';
+
+        
+        echo '</div>';
+        echo "<div style='' id='cargador_municipios1'></div>";
+
+        echo "<br><center>";
+         echo $form->submit('Guardar',array( 'class'=>"btn btn-primary py-3 px-4"));
+
+    
+  ?>
+</div>
+
+<div style='visibility:hidden'>
+<script>
+function enviar_datos_escuela(){
+
+  datos={
+        id:'<?php echo $this->data['Base1']['id']; ?>',
+        estado:$('#Base1Estado').val(),
+        municipio:$('#Base1Municipio').val(),
+        tipo:$('#Base1Tipo').val(),
+        sector:$('#Base1Sector').val(),
+        turno:$('#Base1Turno').val(),
+        id_distribuidor:$('#Base1IdDistribuidor').val(),
+        alumnos:$('#Base1Alumnos').val(),
+        cct:$('#Base1Cct').val(),
+        nombre:$('#Base1Nombre').val(),
+        grupos:$('#Base1Grupos').val(),
+        nombre_contacto:$('#Base1NombreContacto').val(),
+        telefono_contacto:$('#Base1TelefonoContacto').val(),
+        correo_contacto:$('#Base1CorreoContacto').val(),
+        notas:$('#Base1Notas').val(),
+        estatus:$('#Base1Estatus').val(),
+        verificada:$('#Base1Verificada').val(),
+      }
+  cierra_pop(datos);
+  return false;
+}
+
+function mete_municipio1(l,mun){
+		$("<option value='"+l+"'>"+mun+"</option>").appendTo("#Base1Municipio");
+	}
+
+function dame_municipios1(){
+  el=$('#Base1Estado').val()
+	$('#Base1Municipio').empty();
+
+
+$("#cargador_municipios1").load("<?php echo $html->url(array('controller'=>'Bases','action'=>'municipio')) ?>", {estado:el,iden:1}, 
+		function(){
+
+		 });
+
+
+
+}
+
+	$('#Base1Estado').change(function() {
+		dame_municipios1();
+	});
+
+  function pon_municipio(){
+    $('#Base1Municipio').val(<?php echo $this->data['Base1']['municipio']; ?>)
+  }
+
+  dame_municipios1()
+  setTimeout("pon_municipio()",1000);
+</script>
+</div>

@@ -1,0 +1,123 @@
+
+table tr.altrow td {
+	background: #f4f4f4;
+	color:#000000;
+}
+
+
+
+/* Paging */
+div.paging {
+	color: #fff;
+	margin-bottom: 2em;
+}
+div.paging div.disabled {
+	color: #aaa;
+	display: inline;
+}
+div.paging span {
+}
+div.paging span.current {
+	color: #00f;
+}
+div.paging span a {
+}
+
+/* Scaffold View */
+dl {
+	line-height: 2em;
+	margin: 0em 0em;
+	width: 60%;
+}
+dl.altrow {
+	background: #f4f4f4;
+}
+dt {
+	font-weight: bold;
+	padding-left: 4px;
+	vertical-align: top;
+}
+dd {
+	margin-left: 10em;
+	margin-top: -2em;
+	vertical-align: top;
+}
+
+
+.message{
+	color: #FFFFFF;
+	background: #aa2334;
+	width:100%;
+	padding-top:10px;
+	padding-bottom:10px;
+	text-align: center;
+	margin-bottom:30px;
+}
+
+
+.tabla_intranet{
+	width:100% !important;
+}
+
+
+.input label{
+	width:200px;
+	margin-right: 10px;
+}
+
+fieldset {
+	display: solid;
+	border: 1px solid #ccc;
+	margin-top: 10px;
+	padding: 10px;
+	margin-bottom:2px;
+	margin:10px;
+}
+fieldset legend {
+	padding-left:10px;
+	padding-right:10px;
+	width:auto !important;
+	color: #FF4800;
+	font-size: 1.5em;
+	font-weight: bold;
+}
+
+.cuadro{
+	border: 2px solid #1F1F2E;
+	border-radius: 10px;
+	overflow:hidden;
+  
+  }
+
+  .cuadro_tipo{
+		text-align:right;
+		font-weight: bold;
+  }
+
+  .cuadro_materia{
+	text-align:center;
+	font-weight: bold;
+	font-size:1.4em;
+}
+
+  .cuadro_horas{
+	padding:10px;
+	border: 2px solid #1F1F2E;
+	border-radius: 10px;
+  }
+
+  .nueva_clase{
+	text-align:center;
+	float:right;
+	color:#fff;
+	background:#1F1F2E;
+	font-size:3em;
+	border-radius: 50%;
+	width:60px;
+  }
+
+
+  .nueva_clase a:hover{
+	text-decoration: none;
+  }
+

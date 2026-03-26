@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<!--
+ @license
+ Copyright 2019 Google LLC. All Rights Reserved.
+ SPDX-License-Identifier: Apache-2.0
+-->
+<html>
+  <head>
+    <title>Terriorios de distribuidores</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+    <!-- jsFiddle will insert css and js -->
+    <link rel="stylesheet" type="text/css" href="territorio.css" />
+    <script type="module" src="territorio.js"></script>
+  </head>
+  <body>
+    <center><h1>Territorio por distribuidor</h1></center>
+    <strong> Distribuidor 1 <div class='cuadro' style="background:#f00"></div></strong><br><br>
+    <strong> Distribuidor 2 <div class='cuadro' style="background:#ff0"></div></strong><br><br>
+    <strong> Distribuidor 3 <div class='cuadro' style="background:#f0f"></div></strong>
+    <div id="map"></div>
+
+    <!-- 
+      The `defer` attribute causes the callback to execute after the full HTML
+      document has been parsed. For non-blocking uses, avoiding race conditions,
+      and consistent behavior across browsers, consider loading using Promises
+      with https://www.npmjs.com/package/@googlemaps/js-api-loader.
+      -->
+      <style>
+        .cuadro{
+            width:20px;
+            height:20px;
+            margin-right:5px;
+            margin-left:20px;
+            float:left;
+        }
+      </style>
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key=key&callback=initMap&v=weekly"
+      defer
+    ></script>
+  </body>
+</html>

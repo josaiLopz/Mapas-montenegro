@@ -30,6 +30,17 @@
 .login-card .button {
     width: 100%;
 }
+.forgot-password-link {
+    text-align: center;
+    margin-top: 16px;
+}
+
+.forgot-password-link a {
+    color: #555;
+    font-size: 0.9em;
+    text-decoration: none;
+}
+.forgot-password-link a:hover { text-decoration: underline; }
 </style>
 
 <div class="login-page">
@@ -42,5 +53,8 @@
         <?= $this->Form->control('password', ['type' => 'password']) ?>
         <?= $this->Form->button('Entrar') ?>
         <?= $this->Form->end() ?>
+         <div class="forgot-password-link">
+            <?= $this->Html->link('¿Olvidaste tu contraseña?', ['action' => 'forgotPassword']) ?>
+        </div>
     </div>
 </div>

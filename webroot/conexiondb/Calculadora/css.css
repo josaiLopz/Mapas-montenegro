@@ -1,0 +1,152 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.navbar {
+    background-color: #333;
+    color: #fff;
+    padding: 20px 0;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+
+.navbar .logo {
+    font-size: 1.5rem;
+    color: #fff;
+    text-decoration: none;
+    display: block;
+    text-align: left;
+}
+
+.navbar .nav-menu {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    float: none;
+    text-align: center;
+}
+
+.navbar .nav-menu li {
+    display: inline-block;
+    margin-left: 20px;
+    font-family: 'Bubblegum Sans', regular;     
+}
+
+.navbar .nav-menu li a {
+    color: #fff;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.navbar .nav-menu li a:hover {
+    color: #ffc107;
+}
+
+.container {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(116, 1, 1, 0.1);
+    margin: auto;
+    max-width: 950px;
+    overflow: auto;
+    /* Hacer que el contenedor sea scrollable */
+}
+
+.label-input-container {
+    margin-left: 95px;
+    font-size: 16px;
+    margin-bottom: 20px;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+h1 {
+    font-family: 'Bubblegum Sans', regular;       
+
+    text-align: center;
+
+    -webkit-text-fill-color: transparent;
+}
+
+label {
+    font-weight: BOLD;
+}
+
+input {
+    margin-left: 15px;
+    max-width: 30%;
+}
+
+input[type="number"],
+select {
+    width: 20%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+p {
+    margin: 10px 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #fff8f8;
+}
+
+.result {
+    font-weight: bold;
+    font-size: 18px;
+    color: #007bff;
+}
+
+/* Reglas para alternar colores de fondo de las filas */
+tr:nth-child(even) {
+    background-color: #d8d8d5;
+    /* Fondo amarillo */
+}
+
+tr:nth-child(odd) {
+    background-color: #ffffff;
+    /* Fondo blanco */
+}
+
+/* Estilo para pantallas pequeñas */
+@media only screen and (max-width: 768px) {
+    .container {
+        padding: 10px;
+        margin: 10px;
+    }
+
+    input[type="number"],
+    select {
+        width: calc(50% - 5px);
+        margin-right: 10px;
+        margin-bottom: 10px;
+    }
+
+    input[type="checkbox"] {
+        margin-left: 0;
+    }
+
+    .label-input-container {
+        margin-left: 0;
+    }
+}

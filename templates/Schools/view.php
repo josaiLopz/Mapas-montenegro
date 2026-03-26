@@ -56,7 +56,7 @@
             <dl class="detail-grid">
                 <div class="detail-item"><dt>Estatus</dt><dd><?= h((string)($school->estatus ?? '-')) ?></dd></div>
                 <div class="detail-item"><dt>Verificada</dt><dd><span class="status-badge <?= $school->verificada ? 'is-active' : 'is-inactive' ?>"><?= $school->verificada ? 'Si' : 'No' ?></span></dd></div>
-                <div class="detail-item"><dt>Editorial actual</dt><dd><?= h((string)($school->editorial_actual ?? '-')) ?></dd></div>
+                <div class="detail-item"><dt>Tipo Compras</dt><dd><?= h((string)($school->editorial_actual ?? '-')) ?></dd></div>
                 <div class="detail-item"><dt>Venta Montenegro</dt><dd><span class="status-badge <?= $school->venta_montenegro ? 'is-active' : 'is-inactive' ?>"><?= $school->venta_montenegro ? 'Si' : 'No' ?></span></dd></div>
                 <div class="detail-item"><dt>Competencia</dt><dd><?= h((string)($school->competencia ?? '-')) ?></dd></div>
                 <div class="detail-item"><dt>Presupuesto</dt><dd><?= h((string)($school->presupuesto ?? '-')) ?></dd></div>

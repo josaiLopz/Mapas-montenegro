@@ -43,7 +43,15 @@
     
             <div class="content-card">
                 <h3>Seguridad</h3>
-    
+    		<div class="password-group">
+                    <?= $this->Form->control('current_password', [
+                        'type' => 'password',
+                        'label' => 'Contrasena actual',
+                        'id' => 'current-password',
+                        'value' => ''
+                    ]) ?>
+                    <button type="button" class="toggle-password" data-target="current-password">👁</button>
+                </div>
                 <div class="password-group">
                     <?= $this->Form->control('new_password', [
                         'type' => 'password',

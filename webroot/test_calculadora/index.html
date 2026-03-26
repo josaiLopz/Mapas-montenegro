@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin · Calculadora Descuentos</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --brand: #aa2334; --brand-soft: #fbe9ec; --brand-light: #bb505d;
+  --radius-sm: 6px; --radius-md: 12px; --radius-lg: 16px;
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+:root[data-theme="dark"] {
+  --bg:#111118; --surface:#1a1a23; --surface-2:#242430; --border:#303040;
+  --accent:var(--brand); --accent-soft:rgba(170,35,52,.15); --accent-text:#f8b4c0;
+  --danger:#e57373; --success:#66bb6a; --success-text:#0c2b16; --success-soft:rgba(102,187,106,.15);
+  --text-primary:#f0f0f6; --text-secondary:#a0a0b4; --text-tertiary:#6b6b80;
+  --shadow-md:0 4px 10px -2px rgba(0,0,0,.5); --shadow-lg:0 10px 25px -3px rgba(0,0,0,.5);
+}
+:root[data-theme="light"] {
+  --bg:#f7f8fc; --surface:#ffffff; --surface-2:#f0f2f7; --border:#e2e8f0;
+  --accent:var(--brand); --accent-soft:var(--brand-soft); --accent-text:var(--brand);
+  --danger:#d32f2f; --success:#2e7d32; --success-text:#ffffff; --success-soft:#e8f5e9;
+  --text-primary:#1a202c; --text-secondary:#4a5568; --text-tertiary:#718096;
+  --shadow-md:0 4px 10px -2px rgba(14,14,24,.1); --shadow-lg:0 10px 25px -3px rgba(14,14,24,.1);
+}
+body { background:var(--bg); color:var(--text-primary); font-family:var(--font-sans); min-height:100vh; -webkit-font-smoothing:antialiased; }
+h1,h2,h3{font-weight:700;}
+.app{display:grid;grid-template-columns:280px 1fr;min-height:100vh;}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:24px 16px;display:flex;flex-direction:column;gap:8px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.main{padding:32px 40px;overflow-y:auto;max-height:100vh;}
+.sidebar-logo{display:flex;align-items:center;gap:12px;padding:0 8px 20px;border-bottom:1px solid var(--border);margin-bottom:8px;}
+.logo-text{font-size:18px;font-weight:700;color:var(--text-primary);line-height:1.2;}
+.logo-text span{color:var(--text-secondary);font-size:12px;display:block;font-weight:400;}
+.nav-section{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-tertiary);padding:16px 8px 4px;}
+.nav-item-wrap{display:flex;align-items:center;gap:4px;}
+.nav-item{display:flex;align-items:center;justify-content:flex-start;gap:10px;padding:9px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:14px;font-weight:500;transition:all .15s ease;color:var(--text-secondary);border:none;background:none;flex:1;text-align:left;}
+.nav-item:hover{background:var(--surface-2);color:var(--text-primary);}
+.nav-item.selected{background:var(--accent-soft);color:var(--accent-text);font-weight:600;}
+.nav-item .nav-badge{margin-left:auto;font-size:12px;background:var(--surface-2);padding:2px 8px;border-radius:99px;color:var(--text-secondary);font-weight:500;}
+.nav-item.selected .nav-badge{background:var(--accent);color:var(--bg);}
+.icon-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:var(--radius-sm);font-size:14px;color:var(--text-tertiary);transition:all .15s ease;display:inline-flex;align-items:center;justify-content:center;}
+.icon-btn:hover{background:var(--surface-2);color:var(--text-primary);}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0;}
+.dot.off{background:var(--text-tertiary);}
+.page-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px;}
+.page-title{font-size:28px;line-height:1.2;color:var(--text-primary);}
+.page-subtitle{font-size:15px;color:var(--text-secondary);margin-top:6px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px;box-shadow:var(--shadow-md);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;}
+.card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
+.card-title{font-size:16px;font-weight:600;}
+.card-subtitle{font-size:12px;color:var(--text-secondary);margin-top:4px;}
+.btn{padding:9px 18px;border:1px solid transparent;border-radius:var(--radius-sm);cursor:pointer;font-family:var(--font-sans);font-size:14px;font-weight:600;transition:all .2s ease;display:inline-flex;align-items:center;justify-content:center;gap:6px;}
+.btn-primary{background:var(--accent);color:#fff;}.btn-primary:hover{filter:brightness(1.15);}
+.btn-secondary{background:var(--surface-2);color:var(--text-primary);border-color:var(--border);}.btn-secondary:hover{background:var(--border);}
+.btn-danger{background:var(--danger);color:#fff;}.btn-danger:hover{filter:brightness(1.15);}
+.btn-success{background:var(--success);color:var(--success-text);}.btn-success:hover{filter:brightness(1.15);}
+.btn-sm{padding:6px 12px;font-size:13px;}
+label{font-size:13px;font-weight:500;color:var(--text-secondary);display:block;margin-bottom:6px;}
+input[type=text],input[type=number],input[type=email],input[type=date],select,textarea{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius-sm);padding:10px 14px;font-family:var(--font-sans);font-size:14px;outline:none;transition:all .15s ease;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);cursor:pointer;}
+/* Estilo para input de fecha en modo oscuro */
+input[type=date]::-webkit-calendar-picker-indicator{filter:invert(0.7);cursor:pointer;}
+:root[data-theme="dark"] input[type=date]::-webkit-calendar-picker-indicator{filter:invert(0.8) brightness(1.5);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.form-group{margin-bottom:16px;}
+.toggle{position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.slider{position:absolute;inset:0;background:var(--surface-2);border:1px solid var(--border);border-radius:22px;cursor:pointer;transition:.2s;}
+.slider:before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:var(--text-tertiary);border-radius:50%;transition:.2s;}
+input:checked+.slider{background:var(--success);border-color:var(--success);}
+input:checked+.slider:before{background:#fff;transform:translateX(18px);}
+.results-table{width:100%;border-collapse:collapse;font-size:14px;}
+.results-table th{text-align:left;padding:12px 16px;background:var(--surface-2);color:var(--text-secondary);font-weight:600;font-size:12px;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);}
+.results-table td{padding:12px 16px;border-bottom:1px solid var(--border);}
+.results-table tr:last-child td{border-bottom:none;}
+.results-table tr.final td{font-weight:700;font-size:18px;color:var(--accent-text);background:var(--accent-soft);}
+.tag{display:inline-block;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;}
+.tag-warn{background:var(--accent-soft);color:var(--accent-text);}
+.tag-ok{background:var(--success-soft);color:var(--success);}
+.tag-off{background:var(--surface-2);color:var(--text-secondary);}
+.tipo-badge{display:inline-block;font-size:11px;padding:3px 8px;border-radius:var(--radius-sm);font-weight:600;margin-left:8px;}
+.tipo-numero{background:var(--accent-soft);color:var(--accent-text);}
+.tipo-checkbox{background:var(--success-soft);color:var(--success);}
+.tipo-porcentaje{background:var(--accent-soft);color:var(--accent-text);}
+.tipo-suma{background-color:rgba(167,139,250,.15);color:#a78bfa;}
+.tipo-texto{background:var(--surface-2);color:var(--text-secondary);}
+/* Nuevo tipo fecha */
+.tipo-fecha{background:rgba(56,189,248,.15);color:#38bdf8;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;z-index:999;animation:fadeIn .2s ease;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);width:540px;max-width:95vw;max-height:95vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);animation:slideIn .3s ease-out;}
+@keyframes slideIn{from{transform:translateY(20px) scale(.98);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+.modal-box.wide{width:720px;}
+.modal-box.extra-wide{width:900px;}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-bottom:1px solid var(--border);font-size:18px;font-weight:600;flex-shrink:0;}
+.modal-close{background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:16px;padding:4px 8px;border-radius:var(--radius-sm);}
+.modal-close:hover{background:var(--surface-2);color:var(--text-primary);}
+.modal-body{padding:24px;overflow-y:auto;flex:1;}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:12px;flex-shrink:0;}
+.tramos-editor{background:var(--surface-2);border-radius:var(--radius-md);padding:16px;}
+/* Cabecera para tramos normales (número): 4 col */
+.tramos-header{display:grid;grid-template-columns:1fr 1fr 1fr 40px;gap:10px;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-tertiary);padding-bottom:8px;letter-spacing:.06em;}
+/* Cabecera para tramos por % (porcentaje): 4 col */
+.tramos-header-pct{display:grid;grid-template-columns:1fr 1fr 1fr 40px;gap:10px;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-tertiary);padding-bottom:8px;letter-spacing:.06em;}
+.tramo-row{display:grid;grid-template-columns:1fr 1fr 1fr 40px;gap:10px;margin-bottom:8px;align-items:center;}
+.tramo-row input{font-size:13px;padding:8px 10px;}
+.btn-add-tramo{margin-top:8px;padding:8px 14px;background:var(--accent-soft);color:var(--accent-text);border:none;border-radius:var(--radius-sm);font-size:13px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:6px;}
+.btn-remove-tramo{background:none;border:1px solid var(--border);color:var(--danger);border-radius:var(--radius-sm);cursor:pointer;font-size:16px;line-height:1;height:38px;width:38px;display:inline-flex;align-items:center;justify-content:center;}
+.btn-remove-tramo:hover{background:var(--accent-soft);}
+.calc-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px;margin-bottom:18px;box-shadow:var(--shadow-md);}
+.calc-section-title{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary);margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+.calc-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 18px;margin-bottom:12px;}
+.metric-val{font-size:24px;font-weight:700;color:var(--accent-text);}
+.metric-lbl{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;margin-top:4px;font-weight:500;}
+.checkbox-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.checkbox-row:last-child{border-bottom:none;}
+.checkbox-row label{margin-bottom:0;}
+.formula-hint{font-size:12px;color:var(--text-secondary);background:var(--surface-2);padding:10px 14px;border-radius:var(--radius-sm);margin-top:8px;line-height:1.6;}
+.fecha-hint{font-size:12px;color:#38bdf8;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);padding:10px 14px;border-radius:var(--radius-sm);margin-top:8px;line-height:1.6;display:flex;align-items:flex-start;gap:8px;}
+.toast{position:fixed;bottom:32px;right:32px;padding:14px 24px;border-radius:var(--radius-md);font-size:15px;font-weight:500;z-index:9999;animation:slideUp .3s ease;box-shadow:var(--shadow-lg);}
+.toast-ok{background:var(--success);color:var(--success-text);}
+.toast-warn{background:var(--danger);color:#fff;}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.spinner{text-align:center;padding:60px;color:var(--text-secondary);font-size:14px;}
+.empty{text-align:center;padding:80px 20px;color:var(--text-secondary);background:var(--surface);border:1px dashed var(--border);border-radius:var(--radius-lg);}
+.empty-icon{font-size:48px;margin-bottom:16px;color:var(--text-tertiary);}
+.disc-pct{font-weight:700;font-size:32px;color:var(--accent-text);}
+.disc-tag{display:inline-block;font-size:11px;background:var(--surface-2);padding:3px 8px;border-radius:var(--radius-sm);color:var(--text-secondary);margin-top:6px;}
+.clave-mono{font-family:var(--font-mono);font-size:13px;color:var(--accent-text);margin-top:6px;}
+/* Fecha display en calculadora */
+.fecha-display{display:flex;align-items:center;gap:8px;font-size:13px;padding:6px 0;}
+.fecha-vencida{color:var(--danger);font-weight:600;}
+.fecha-vigente{color:var(--success);font-weight:600;}
+.fecha-sin-fecha{color:var(--text-tertiary);}
+/* Tabla usuarios */
+.users-table{width:100%;border-collapse:collapse;font-size:14px;}
+.users-table th{text-align:left;padding:10px 14px;background:var(--surface-2);color:var(--text-secondary);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);white-space:nowrap;}
+.users-table td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.users-table tr:last-child td{border-bottom:none;}
+.users-table tr:hover td{background:var(--surface-2);}
+.badge-active{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:var(--success-soft);color:var(--success);}
+.badge-inactive{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:var(--surface-2);color:var(--text-secondary);}
+/* Info box para fecha-pago ligado */
+.link-info-box{background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:#38bdf8;margin-top:8px;line-height:1.6;}
+@media(max-width:900px){.app{grid-template-columns:240px 1fr}.main{padding:24px}}
+@media(max-width:768px){.app{grid-template-columns:1fr}.sidebar{position:relative;height:auto;border-right:none;border-bottom:1px solid var(--border)}.main{max-height:none}.calc-grid{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.page-header{flex-direction:column;align-items:flex-start;gap:16px}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useCallback,useRef}=React;
+
+// ── Configura la clave de admin y la URL de la API ──
+const API_URL   = "api.php";
+const ADMIN_KEY = "calculadora_descuentos"; // igual que en api.php
+
+async function apiFetch(resource, method="GET", body=null, params={}) {
+  const url = new URL(API_URL, window.location.href);
+  url.searchParams.set("resource", resource);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k,v));
+  const opts = {
+    method,
+    headers: { "Content-Type": "application/json", "X-Admin-Key": ADMIN_KEY }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(url.toString(), opts);
+  if (!res.ok) {
+    let errMsg = "Error HTTP " + res.status;
+    try { const d = await res.json(); if (d?.error) errMsg = d.error; } catch {}
+    throw new Error(errMsg);
+  }
+  return res.json();
+}
+
+// ── Motor de cálculo dinámico ──
+function computeValores(campos, calc) {
+  const activos = (campos||[]).filter(c => c.activo || c.activo===1 || c.activo===true);
+  const byClave = Object.fromEntries(activos.map(c => [c.clave, c]));
+  const cache = {}, visiting = new Set();
+  const n0 = v => { const n=parseFloat(v); return isNaN(n)?0:n; };
+  const get = clave => {
+    if (Object.prototype.hasOwnProperty.call(cache, clave)) return cache[clave];
+    if (visiting.has(clave)) return 0;
+    visiting.add(clave);
+    const c = byClave[clave];
+    let val = 0;
+    if (!c) {
+      const raw = calc?.[clave];
+      val = typeof raw==="boolean" ? raw : n0(raw);
+    } else if (c.tipo==="checkbox") {
+      val = !!calc?.[clave];
+    } else if (c.tipo==="texto") {
+      val = calc?.[clave] ?? "";
+    } else if (c.tipo==="fecha") {
+      // Para fecha devolvemos el string de fecha; el cálculo de descuento lo maneja aparte
+      val = calc?.[clave] ?? "";
+    } else if (c.tipo==="numero") {
+      val = n0(calc?.[clave]);
+    } else if (c.tipo==="suma") {
+      const arr = Array.isArray(c.formula) ? c.formula : [];
+      val = arr.reduce((s,k) => s + n0(get(k)), 0);
+    } else if (c.tipo==="porcentaje") {
+      const f = (c.formula && typeof c.formula==="object") ? c.formula : {};
+      const num = n0(get(f.numerador)), den = n0(get(f.denominador));
+      val = !den ? 0 : f.tipo==="crecimiento" ? ((num-den)/den)*100 : (num/den)*100;
+    } else {
+      val = n0(calc?.[clave]);
+    }
+    cache[clave] = val;
+    visiting.delete(clave);
+    return val;
+  };
+  activos.forEach(c => get(c.clave));
+  return cache;
+}
+
+// ── Obtener valor de tramo por número (para escalonado numérico) ──
+function getTramoValor(tramos, valor) {
+  if (!tramos?.length || valor==="" || valor==null) return 0;
+  const num = parseFloat(valor); if (isNaN(num)) return 0;
+  const t = tramos.find(t => num>=t.desde && num<=(t.hasta>=999999?Infinity:t.hasta));
+  return t ? parseFloat(t.valor) : 0;
+}
+
+// ── Obtener valor de tramo por porcentaje (nuevo: desde/hasta en %, descuento en %) ──
+function getTramoValorPct(tramos, pctValue) {
+  if (!tramos?.length || pctValue==="" || pctValue==null) return 0;
+  const num = parseFloat(pctValue); if (isNaN(num)) return 0;
+  const t = tramos.find(t => num>=parseFloat(t.desde) && num<=(parseFloat(t.hasta)>=999?Infinity:parseFloat(t.hasta)));
+  return t ? parseFloat(t.valor) : 0;
+}
+
+// ── Evaluar si la fecha está vigente (para campo fecha ligado a pago puntual) ──
+function esFechaVigente(fechaStr) {
+  if (!fechaStr) return false;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const fecha = new Date(fechaStr + "T00:00:00");
+  return fecha >= hoy;
+}
+
+const fmt  = n => isNaN(n) ? "—" : "$"+parseFloat(n).toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2});
+const pctFmt = n => isNaN(n) ? "—" : (n*100).toFixed(1)+"%";
+const n0   = v => { const n=parseFloat(v); return isNaN(n)?0:n; };
+const isComputed = c => c?.tipo==="suma" || c?.tipo==="porcentaje";
+
+// ── Toast ──
+function Toast({msg,type,onClose}){
+  useEffect(()=>{const t=setTimeout(onClose,3000);return()=>clearTimeout(t);},[]);
+  return <div className={"toast toast-"+type}>{msg}</div>;
+}
+
+// ── Modal ──
+function Modal({title,onClose,children,wide,extraWide}){
+  return(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className={"modal-box"+(extraWide?" extra-wide":wide?" wide":"")} onClick={e=>e.stopPropagation()}>
+        <div className="modal-header"><span>{title}</span>
+          <button className="modal-close" onClick={onClose}><i className="bi bi-x-lg"></i></button>
+        </div>
+        <div className="modal-body">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── TramosEditor (numérico — original) ──
+function TramosEditor({tramos,onChange}){
+  const update=(i,field,val)=>onChange(tramos.map((t,idx)=>idx===i?{...t,[field]:field==="valor"?parseFloat(val)/100:parseFloat(val)}:t));
+  return(
+    <div className="tramos-editor">
+      <div className="tramos-header"><span>Desde</span><span>Hasta (999999=∞)</span><span>Descuento %</span><span></span></div>
+      {tramos.map((t,i)=>(
+        <div className="tramo-row" key={i}>
+          <input type="number" value={t.desde} onChange={e=>update(i,"desde",e.target.value)}/>
+          <input type="number" value={t.hasta} onChange={e=>update(i,"hasta",e.target.value)}/>
+          <input type="number" step="0.1" min="0" max="100" value={(parseFloat(t.valor)*100).toFixed(1)} onChange={e=>update(i,"valor",e.target.value)}/>
+          <button className="btn-remove-tramo" onClick={()=>onChange(tramos.filter((_,idx)=>idx!==i))}><i className="bi bi-dash"></i></button>
+        </div>
+      ))}
+      <button className="btn-add-tramo" onClick={()=>onChange([...tramos,{desde:0,hasta:0,valor:0}])}><i className="bi bi-plus"></i> Tramo</button>
+    </div>
+  );
+}
+
+// ── TramosEditorPct (nuevo: rangos de porcentaje → descuento %) ──
+// desde/hasta son % (ej 0, 10, 20...) valor es fracción (0.02 = 2%)
+function TramosEditorPct({tramos,onChange}){
+  const update=(i,field,val)=>onChange(tramos.map((t,idx)=>{
+    if(idx!==i) return t;
+    if(field==="valor") return {...t,valor:parseFloat(val)/100};
+    return {...t,[field]:parseFloat(val)};
+  }));
+  return(
+    <div className="tramos-editor">
+      <div className="tramos-header-pct">
+        <span>Desde %</span>
+        <span>Hasta % (999=∞)</span>
+        <span>Descuento %</span>
+        <span></span>
+      </div>
+      {tramos.map((t,i)=>(
+        <div className="tramo-row" key={i}>
+          <input type="number" step="0.1" min="0" value={t.desde} onChange={e=>update(i,"desde",e.target.value)} placeholder="0"/>
+          <input type="number" step="0.1" min="0" value={t.hasta} onChange={e=>update(i,"hasta",e.target.value)} placeholder="10"/>
+          <input type="number" step="0.1" min="0" max="100" value={(parseFloat(t.valor)*100).toFixed(1)} onChange={e=>update(i,"valor",e.target.value)} placeholder="2"/>
+          <button className="btn-remove-tramo" onClick={()=>onChange(tramos.filter((_,idx)=>idx!==i))}><i className="bi bi-dash"></i></button>
+        </div>
+      ))}
+      <button className="btn-add-tramo" onClick={()=>onChange([...tramos,{desde:0,hasta:10,valor:0}])}><i className="bi bi-plus"></i> Tramo %</button>
+      <div className="formula-hint" style={{marginTop:10}}>
+        <strong>Ejemplo:</strong> 0%–10% → 2% desc · 10%–20% → 3% desc · 20%–999% → 5% desc
+      </div>
+    </div>
+  );
+}
+
+//  APP
+
+function App(){
+  const [theme,setTheme]=useState("dark");
+  useEffect(()=>{
+    const saved=localStorage.getItem("theme");
+    const prefersDark=window.matchMedia?.("(prefers-color-scheme: dark)")?.matches;
+    const initial=saved||(prefersDark?"dark":"light");
+    setTheme(initial); document.documentElement.dataset.theme=initial;
+  },[]);
+  useEffect(()=>{ document.documentElement.dataset.theme=theme; localStorage.setItem("theme",theme); },[theme]);
+
+  const [lineas,setLineas]=useState([]);
+  const [campos,setCampos]=useState([]);
+  const [discounts,setDiscounts]=useState([]);
+  const [historial,setHistorial]=useState([]);
+  const [usuarios,setUsuarios]=useState([]);
+  const [selectedLinea,setSelectedLinea]=useState(null);
+  const [activeTab,setActiveTab]=useState("descuentos");
+  const [loading,setLoading]=useState(false);
+  const [toast,setToast]=useState(null);
+
+  const [modalLinea,setModalLinea]=useState(false);
+  const [editLinea,setEditLinea]=useState(null);
+  const [modalDisc,setModalDisc]=useState(false);
+  const [editDisc,setEditDisc]=useState(null);
+  const [modalCampo,setModalCampo]=useState(false);
+  const [editCampo,setEditCampo]=useState(null);
+  const [modalUsuario,setModalUsuario]=useState(false);
+  const [editUsuario,setEditUsuario]=useState(null);
+  const [modalValores,setModalValores]=useState(false);
+  const [editValores,setEditValores]=useState(null);
+
+  const [calc,setCalc]=useState({});
+  const showToast=(msg,type="ok")=>setToast({msg,type});
+  const setC=(k,v)=>setCalc(p=>({...p,[k]:v}));
+  const linea=lineas.find(l=>+l.id===selectedLinea);
+
+  // ── Carga ──
+  const loadLineas=async()=>{ try{ const d=await apiFetch("lineas"); setLineas(Array.isArray(d)?d:[]); } catch{ showToast("Error cargando líneas","warn"); } };
+  const loadCampos=async lineaId=>{
+    try{
+      const d=await apiFetch("campos","GET",null,{linea_id:lineaId});
+      const arr=Array.isArray(d)?d:[];
+      setCampos(arr);
+      const init={};
+      arr.filter(c=>c.activo&&!isComputed(c))
+         .sort((a,b)=>(a.orden??0)-(b.orden??0))
+         .forEach(c=>{
+           if(c.tipo==="checkbox") init[c.clave]=false;
+           else if(c.tipo==="fecha") init[c.clave]="";
+           else init[c.clave]="";
+         });
+      setCalc(init);
+    } catch{ setCampos([]); setCalc({}); }
+  };
+  const loadDescuentos=async lineaId=>{ setLoading(true); try{ const d=await apiFetch("descuentos","GET",null,{linea_id:lineaId}); setDiscounts(Array.isArray(d)?d:[]); } catch{ showToast("Error cargando descuentos","warn"); } setLoading(false); };
+  const loadHistorial=async lineaId=>{ try{ const d=await apiFetch("cotizaciones","GET",null,{linea_id:lineaId}); setHistorial(Array.isArray(d)?d:[]); } catch{} };
+  const loadUsuarios=async lineaId=>{ try{ const d=await apiFetch("usuarios","GET",null,lineaId?{linea_id:lineaId}:{}); setUsuarios(Array.isArray(d)?d:[]); } catch{ showToast("Error cargando usuarios","warn"); } };
+
+  useEffect(()=>{ loadLineas(); },[]);
+  useEffect(()=>{
+    if(selectedLinea){ loadCampos(selectedLinea); loadDescuentos(selectedLinea); loadHistorial(selectedLinea); loadUsuarios(selectedLinea); }
+  },[selectedLinea]);
+
+  // ── Cálculo (con soporte escalonado por %, y campo fecha ligado a pago puntual) ──
+  const resultado=useCallback(()=>{
+    if(!linea||!discounts.length) return null;
+    const precioBase=parseFloat(linea.precio_base);
+    const valores=campos.length ? computeValores(campos,calc) : null;
+    const inputs=valores ? {...valores} : {};
+    campos.filter(c=>c.activo&&c.tipo==="checkbox").forEach(c=>{ inputs[c.clave]=!!calc[c.clave]; });
+    // Incluir fechas en inputs
+    campos.filter(c=>c.activo&&c.tipo==="fecha").forEach(c=>{ inputs[c.clave]=calc[c.clave]??""; });
+
+    let precioActual=precioBase;
+
+    // ── Detectar meta dinámicamente ──────────────────────────────────
+    // Busca el campo de tipo 'porcentaje' con tipo "normal" que mida
+    // cumplimiento (denominador = meta, numerador = venta).
+    // Si lo encuentra, metaCumplida = pctMeta >= 100%.
+    // Si no hay campo porcentaje de cobertura, cae al método clásico
+    // buscando claves "meta"/"metaFirmada" vs "ventaTotal".
+    let metaCumplida = false;
+    const campoPctCobertura = campos.find(c =>
+      c.activo && c.tipo === "porcentaje" &&
+      c.formula && c.formula.tipo !== "crecimiento" &&
+      c.formula.denominador && c.formula.numerador
+    );
+    if (campoPctCobertura) {
+      // Si el % de cobertura >= 100 → meta cumplida
+      const pctVal = n0(inputs[campoPctCobertura.clave]);
+      metaCumplida = pctVal >= 100;
+    } else {
+      // Fallback: busca cualquier campo numérico cuya clave contenga "meta"
+      const metaField = campos.find(c =>
+        c.activo && c.tipo === "numero" && /meta/i.test(c.clave)
+      );
+      const ventaField = campos.find(c =>
+        c.activo && (c.tipo === "numero" || c.tipo === "suma") &&
+        /venta|total/i.test(c.clave) && !/meta/i.test(c.clave)
+      );
+      const metaVal = metaField ? n0(inputs[metaField.clave]) : 0;
+      const ventaVal = ventaField ? n0(inputs[ventaField.clave]) : 0;
+      metaCumplida = metaVal > 0 && ventaVal >= metaVal;
+    }
+
+    const rows=[];
+    [...discounts].sort((a,b)=>a.orden-b.orden).forEach(d=>{
+      if(!d.activo) return;
+      const bloq=d.sujeto_meta&&!metaCumplida;
+      let pct=0;
+      if(!bloq){
+        if(d.escalonado){
+          // Detectar si el campo depende_de es de tipo porcentaje o numérico
+          const campoRef=campos.find(c=>c.activo&&c.clave===d.depende_de);
+          const esPct=campoRef?.tipo==="porcentaje";
+          const v=inputs[d.depende_de];
+          if(esPct){
+            // Escalonado por rango de % (tramos con desde/hasta en %)
+            pct=getTramoValorPct(d.tramos, typeof v==="number"?v:parseFloat(v));
+          } else {
+            pct=getTramoValor(d.tramos,typeof v==="boolean"?(v?1:0):v);
+          }
+        } else {
+          // Para campo tipo fecha: se considera "activo" si la fecha es vigente (≥ hoy)
+          const campoRef=campos.find(c=>c.activo&&c.clave===d.depende_de);
+          if(campoRef?.tipo==="fecha"){
+            pct=esFechaVigente(inputs[d.depende_de]) ? parseFloat(d.valor) : 0;
+          } else {
+            pct=inputs[d.depende_de] ? parseFloat(d.valor) : 0;
+          }
+        }
+      }
+      const descAplicado=precioActual*pct;
+      const resultado=precioActual-descAplicado;
+      rows.push({...d,pct,descAplicado,resultado,metaCumplida,bloqueadoPorMeta:bloq});
+      precioActual=resultado;
+    });
+    return{rows,precioFinal:precioActual,metaCumplida,valores:inputs};
+  },[calc,discounts,linea,campos]);
+
+  const res=resultado();
+
+  // ── CRUD Líneas ──
+  const saveLinea=async()=>{
+    try{
+      if(editLinea.id) await apiFetch("lineas","PUT",editLinea,{id:editLinea.id});
+      else await apiFetch("lineas","POST",editLinea);
+      await loadLineas(); setModalLinea(false); showToast(editLinea.id?"Línea actualizada ✓":"Línea creada ✓");
+    } catch(e){ showToast("Error: "+e.message,"warn"); }
+  };
+  const deleteLinea=async id=>{
+    if(!confirm("¿Eliminar esta línea y todos sus datos?")) return;
+    try{ await apiFetch("lineas","DELETE",null,{id}); if(selectedLinea===id){setSelectedLinea(null);setDiscounts([]);setCampos([]);} await loadLineas(); showToast("Línea eliminada","warn"); }
+    catch{ showToast("Error eliminando","warn"); }
+  };
+
+  // ── CRUD Campos ──
+  const saveCampo=async()=>{
+    // Validaciones frontend
+    if(!editCampo.etiqueta?.trim()) return showToast("La etiqueta es obligatoria","warn");
+    if(!editCampo.clave?.trim())    return showToast("La clave interna es obligatoria","warn");
+    if(!selectedLinea)              return showToast("Selecciona una línea primero","warn");
+    // Limpiar formula según tipo
+    let formulaFinal = null;
+    if(editCampo.tipo==="suma"){
+      formulaFinal = Array.isArray(editCampo.formula)&&editCampo.formula.length>0
+        ? editCampo.formula : null;
+    } else if(editCampo.tipo==="porcentaje"){
+      formulaFinal = (editCampo.formula?.numerador||editCampo.formula?.denominador)
+        ? editCampo.formula : null;
+    }
+    try{
+      const payload={
+        linea_id: selectedLinea,
+        clave:    editCampo.clave.trim(),
+        etiqueta: editCampo.etiqueta.trim(),
+        tipo:     editCampo.tipo,
+        formula:  formulaFinal,
+        orden:    editCampo.orden ?? 99,
+        activo:   editCampo.activo ? 1 : 0,
+      };
+      if(editCampo.id) await apiFetch("campos","PUT",payload,{id:editCampo.id});
+      else await apiFetch("campos","POST",payload);
+      await loadCampos(selectedLinea); setModalCampo(false);
+      showToast(editCampo.id?"Campo actualizado ✓":"Campo creado ✓");
+    } catch(e){ showToast("Error: "+e.message,"warn"); }
+  };
+  const deleteCampo=async id=>{
+    if(!confirm("¿Eliminar este campo?")) return;
+    try{ await apiFetch("campos","DELETE",null,{id}); await loadCampos(selectedLinea); showToast("Campo eliminado","warn"); }
+    catch{ showToast("Error eliminando","warn"); }
+  };
+  const toggleCampo=async c=>{ try{ await apiFetch("campos","PUT",{...c,activo:c.activo?0:1},{id:c.id}); await loadCampos(selectedLinea); } catch{} };
+
+  // ── CRUD Descuentos ──
+  const saveDiscount=async()=>{
+    try{
+      const payload={...editDisc,linea_id:selectedLinea,escalonado:editDisc.escalonado?1:0,sujeto_meta:editDisc.sujeto_meta?1:0,activo:editDisc.activo?1:0};
+      if(editDisc.id) await apiFetch("descuentos","PUT",payload,{id:editDisc.id});
+      else await apiFetch("descuentos","POST",payload);
+      await loadDescuentos(selectedLinea); setModalDisc(false); showToast(editDisc.id?"Descuento actualizado ✓":"Descuento creado ✓");
+    } catch(e){ showToast("Error: "+e.message,"warn"); }
+  };
+  const deleteDiscount=async id=>{ if(!confirm("¿Eliminar este descuento?")) return; try{ await apiFetch("descuentos","DELETE",null,{id}); await loadDescuentos(selectedLinea); } catch{} };
+  const toggleDiscount=async d=>{
+    try{ await apiFetch("descuentos","PUT",{...d,linea_id:selectedLinea,activo:d.activo?0:1,escalonado:d.escalonado?1:0,sujeto_meta:d.sujeto_meta?1:0},{id:d.id}); await loadDescuentos(selectedLinea); }
+    catch{ showToast("Error al cambiar estado","warn"); }
+  };
+
+  // ── CRUD Usuarios ──
+  const saveUsuario=async()=>{
+    try{
+      if(editUsuario.id) await apiFetch("usuarios","PUT",editUsuario,{id:editUsuario.id});
+      else await apiFetch("usuarios","POST",editUsuario);
+      await loadUsuarios(selectedLinea); setModalUsuario(false); showToast(editUsuario.id?"Usuario actualizado ✓":"Usuario creado ✓");
+    } catch(e){ showToast("Error: "+e.message,"warn"); }
+  };
+  const deleteUsuario=async id=>{
+    if(!confirm("¿Eliminar este usuario?")) return;
+    try{ await apiFetch("usuarios","DELETE",null,{id}); await loadUsuarios(selectedLinea); showToast("Usuario eliminado","warn"); }
+    catch{}
+  };
+
+  // ── Guardar valores de usuario ──
+  const saveValoresUsuario=async()=>{
+    try{
+      await apiFetch("usuario_valores","POST",{
+        usuario_id:editValores.usuario.id,
+        linea_id:selectedLinea,
+        valores:editValores.valores
+      });
+      await loadUsuarios(selectedLinea); setModalValores(false); showToast("Valores guardados ✓");
+    } catch(e){ showToast("Error: "+e.message,"warn"); }
+  };
+
+  // ── Guardar cotización ──
+  const saveCotizacion=async()=>{
+    if(!res) return;
+    try{
+      await apiFetch("cotizaciones","POST",{
+        linea_id:selectedLinea,
+        inputs:res.valores,
+        desglose:res.rows.map(r=>({nombre:r.nombre,pct:r.pct,descAplicado:r.descAplicado,resultado:r.resultado})),
+        precio_final:res.precioFinal,
+      });
+      await loadHistorial(selectedLinea); showToast("Cotización guardada ✓");
+    } catch{ showToast("Error guardando cotización","warn"); }
+  };
+  const deleteCotizacion=async id=>{ try{ await apiFetch("cotizaciones","DELETE",null,{id}); await loadHistorial(selectedLinea); showToast("Eliminada","warn"); } catch{} };
+
+  // ── Helpers calculadora ──
+  const camposActivos=(campos||[]).filter(c=>c.activo||c.activo===1||c.activo===true).sort((a,b)=>(a.orden??0)-(b.orden??0));
+  const inputsCampos=camposActivos.filter(c=>!isComputed(c)&&c.tipo!=="checkbox"&&c.tipo!=="fecha");
+  const checkboxesCampos=camposActivos.filter(c=>c.tipo==="checkbox");
+  const fechasCampos=camposActivos.filter(c=>c.tipo==="fecha");
+  const metricasCampos=camposActivos.filter(c=>isComputed(c));
+
+  // Agrupar campos de entrada por sección
+  const secciones=inputsCampos.reduce((acc,c)=>{
+    const sec=c.seccion||"general";
+    if(!acc[sec]) acc[sec]=[];
+    acc[sec].push(c);
+    return acc;
+  },{});
+
+  // Campos disponibles para selector depende_de
+  const camposDisponibles=camposActivos;
+
+  // Campos numéricos (para la tabla de usuarios)
+  const camposNumericos=camposActivos.filter(c=>c.tipo==="numero"||c.tipo==="suma"||c.tipo==="porcentaje");
+
+  // Campos fecha (para la tabla de usuarios)
+  const camposFecha=camposActivos.filter(c=>c.tipo==="fecha");
+
+  const renderMetricaVal=c=>{
+    const v=res?.valores?.[c.clave];
+    if(c.tipo==="porcentaje") return n0(v).toFixed(1)+"%";
+    return n0(v).toLocaleString("es-MX");
+  };
+
+  // ── Detectar si el campo seleccionado en un descuento es de tipo porcentaje ──
+  const campoDeDiscEs=(disc,tipo)=>{
+    if(!disc?.depende_de) return false;
+    const c=camposActivos.find(c=>c.clave===disc.depende_de);
+    return c?.tipo===tipo;
+  };
+
+  return(
+    <div className="app">
+      {/* ── SIDEBAR ── */}
+      <aside className="sidebar">
+        <div className="sidebar-logo">
+          <img src="../img/logo.png" alt="Logo Montenegro" style={{maxWidth:'200px',display:'block',margin:'0 auto 32px'}}/>
+        </div>
+
+        <div className="nav-section">Líneas</div>
+        {lineas.map(l=>(
+          <div key={l.id} className="nav-item-wrap">
+            <button className={"nav-item"+(+selectedLinea===+l.id?" selected":"")}
+              onClick={()=>{ setSelectedLinea(+l.id); setActiveTab("calculadora"); }}>
+              <span style={{display:"flex",alignItems:"center",gap:8}}>
+                <span className={"dot"+(+l.activa?"":" off")}></span>{l.nombre}
+              </span>
+              <span className="nav-badge">${parseFloat(l.precio_base).toFixed(0)}</span>
+            </button>
+            <button className="icon-btn" onClick={()=>{ setEditLinea({...l}); setModalLinea(true); }}><i className="bi bi-pencil"></i></button>
+            <button className="icon-btn" onClick={()=>deleteLinea(+l.id)}><i className="bi bi-trash"></i></button>
+          </div>
+        ))}
+        <button className="btn btn-secondary btn-sm" style={{marginTop:8}}
+          onClick={()=>{ setEditLinea({nombre:"",precio_base:300,activa:1}); setModalLinea(true); }}>
+          <i className="bi bi-plus"></i> Nueva Línea
+        </button>
+
+        <div className="nav-section" style={{marginTop:14}}>Configuración</div>
+        <button className={"nav-item"+(activeTab==="campos"?" selected":"")} onClick={()=>setActiveTab("campos")}><i className="bi bi-wrench-adjustable"></i> Campos de Entrada</button>
+        <button className={"nav-item"+(activeTab==="descuentos"?" selected":"")} onClick={()=>setActiveTab("descuentos")}><i className="bi bi-gear"></i> Descuentos</button>
+        <button className={"nav-item"+(activeTab==="usuarios"?" selected":"")} onClick={()=>{ setActiveTab("usuarios"); if(selectedLinea) loadUsuarios(selectedLinea); }}><i className="bi bi-people"></i> Usuarios</button>
+
+        <div className="nav-section" style={{marginTop:14}}>Apariencia</div>
+        <div className="nav-item">
+          <span style={{display:"flex",alignItems:"center",gap:10}}><i className="bi bi-moon-stars"></i> Modo oscuro</span>
+          <label className="toggle">
+            <input type="checkbox" checked={theme==="dark"} onChange={()=>setTheme(t=>t==="dark"?"light":"dark")}/>
+            <span className="slider"></span>
+          </label>
+        </div>
+
+        {selectedLinea&&<>
+          <div className="nav-section" style={{marginTop:8}}>Uso</div>
+          <button className={"nav-item"+(activeTab==="calculadora"?" selected":"")} onClick={()=>setActiveTab("calculadora")}><i className="bi bi-calculator"></i> Calculadora</button>
+          <button className={"nav-item"+(activeTab==="historial"?" selected":"")} onClick={()=>setActiveTab("historial")}><i className="bi bi-clock-history"></i> Historial</button>
+        </>}
+      </aside>
+
+      {/* ── MAIN ── */}
+      <main className="main">
+
+        {/* ══ CAMPOS ══ */}
+        {activeTab==="campos"&&(
+          <>
+            <div className="page-header">
+              <div>
+                <h2 className="page-title">Campos de Entrada</h2>
+                <p className="page-subtitle">{selectedLinea?"Configura los inputs para: "+linea?.nombre:"Selecciona una línea"}</p>
+              </div>
+              {selectedLinea&&<button className="btn btn-primary" onClick={()=>{ setEditCampo({clave:"",etiqueta:"",tipo:"numero",formula:null,activo:true,orden:99}); setModalCampo(true); }}><i className="bi bi-plus"></i> Nuevo Campo</button>}
+            </div>
+            {!selectedLinea&&<div className="empty"><div className="empty-icon"><i className="bi bi-arrow-left"></i></div><p>Selecciona una línea del menú lateral.</p></div>}
+            {selectedLinea&&campos.length===0&&(
+              <div className="empty">
+                <div className="empty-icon"><i className="bi bi-wrench-adjustable"></i></div>
+                <p style={{marginBottom:16}}>No hay campos configurados para esta línea.<br/>Crea los campos que necesitas: metas, ventas, checkboxes, fechas, etc.</p>
+                <button className="btn btn-primary" onClick={()=>{ setEditCampo({clave:"",etiqueta:"",tipo:"numero",formula:null,activo:true,orden:99}); setModalCampo(true); }}><i className="bi bi-plus"></i> Crear primer campo</button>
+              </div>
+            )}
+            {selectedLinea&&campos.length>0&&(
+              <div className="card-grid">
+                {campos.map(c=>(
+                  <div className="card" key={c.id} style={{opacity:c.activo?1:0.5,transition:"opacity .2s"}}>
+                    <div className="card-header">
+                      <div>
+                        <div className="card-title">{c.etiqueta}<span className={"tipo-badge tipo-"+(c.tipo||"numero")}>{c.tipo}</span></div>
+                        <div className="clave-mono">clave: <strong>{c.clave}</strong></div>
+                        {c.orden!==undefined&&<div className="card-subtitle">Orden: {c.orden}</div>}
+                        {c.tipo==="fecha"&&(
+                          <div className="fecha-hint" style={{marginTop:6}}>
+                            <i className="bi bi-calendar-event"></i>
+                            <span>Campo de fecha. Se activa si la fecha es <strong>mayor o igual a hoy</strong>. Úsalo ligado a un descuento de pago puntual.</span>
+                          </div>
+                        )}
+                        {c.formula&&(
+                          <div className="formula-hint" style={{marginTop:6}}>
+                            {c.tipo==="suma"&&"Suma: "+(Array.isArray(c.formula)?c.formula.join(" + "):JSON.stringify(c.formula))}
+                            {c.tipo==="porcentaje"&&"("+c.formula.numerador+" ÷ "+c.formula.denominador+") × 100"+(c.formula.tipo==="crecimiento"?" — crecimiento":"")}
+                          </div>
+                        )}
+                      </div>
+                      <label className="toggle"><input type="checkbox" checked={!!c.activo} onChange={()=>toggleCampo(c)}/><span className="slider"></span></label>
+                    </div>
+                    <div style={{display:"flex",gap:8,marginTop:10}}>
+                      <button className="btn btn-secondary btn-sm" style={{flex:1}} onClick={()=>{ setEditCampo({...c,formula:c.formula??null,activo:!!c.activo}); setModalCampo(true); }}><i className="bi bi-pencil"></i> Editar</button>
+                      <button className="btn btn-danger btn-sm" onClick={()=>deleteCampo(c.id)}><i className="bi bi-trash"></i></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ══ DESCUENTOS ══ */}
+        {activeTab==="descuentos"&&(
+          <>
+            <div className="page-header">
+              <div><h2 className="page-title">Descuentos</h2><p className="page-subtitle">{selectedLinea?"Línea: "+linea?.nombre:"Selecciona una línea"}</p></div>
+              {selectedLinea&&<button className="btn btn-primary" onClick={()=>{ setEditDisc({nombre:"Nuevo Descuento",escalonado:false,valor:0.02,depende_de:camposDisponibles[0]?.clave||"ventaTotal",sujeto_meta:false,activo:true,orden:99,tramos:[]}); setModalDisc(true); }}><i className="bi bi-plus"></i> Nuevo Descuento</button>}
+            </div>
+            {!selectedLinea&&<div className="empty"><div className="empty-icon"><i className="bi bi-arrow-left"></i></div><p>Selecciona una línea.</p></div>}
+            {selectedLinea&&loading&&<div className="spinner">Cargando…</div>}
+            {selectedLinea&&!loading&&(
+              <div className="card-grid">
+                {discounts.map(d=>{
+                  const campoRef=camposActivos.find(c=>c.clave===d.depende_de);
+                  const esPctEscalado=d.escalonado&&campoRef?.tipo==="porcentaje";
+                  return(
+                  <div className="card" key={d.id} style={{opacity:d.activo?1:0.5,transition:"opacity .2s"}}>
+                    <div className="card-header">
+                      <div>
+                        <div className="card-title">{d.nombre}</div>
+                        <div className="card-subtitle">
+                          {d.escalonado?(esPctEscalado?"Escalonado por %":"Escalonado"):"Fijo"}
+                          {" · "}{d.sujeto_meta?"Sujeto a meta":"Independiente"}
+                          {" · orden #"}{d.orden}
+                        </div>
+                        <span className="disc-tag">{d.depende_de||"—"}</span>
+                        {campoRef?.tipo==="fecha"&&<span className="disc-tag" style={{marginLeft:4,background:"rgba(56,189,248,.12)",color:"#38bdf8"}}>📅 fecha</span>}
+                      </div>
+                      <label className="toggle"><input type="checkbox" checked={!!+d.activo} onChange={()=>toggleDiscount(d)}/><span className="slider"></span></label>
+                    </div>
+                    {d.escalonado?(
+                      <div>{(d.tramos||[]).map((t,i)=>(
+                        <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:12,padding:"4px 0",borderBottom:"1px solid var(--border)"}}>
+                          <span style={{color:"var(--text-tertiary)"}}>
+                            {esPctEscalado?`${t.desde}%–${t.hasta>=999?"∞":t.hasta+"%"}`:`${t.desde}–${t.hasta>=999999?"∞":t.hasta}`}
+                          </span>
+                          <span style={{color:"var(--success)",fontWeight:600}}>{(parseFloat(t.valor)*100).toFixed(1)}%</span>
+                        </div>
+                      ))}</div>
+                    ):(
+                      <div className="disc-pct">{(parseFloat(d.valor)*100).toFixed(1)}%</div>
+                    )}
+                    <div style={{display:"flex",gap:8,marginTop:14}}>
+                      <button className="btn btn-secondary btn-sm" style={{flex:1}} onClick={()=>{ setEditDisc({...d,tramos:d.tramos||[],escalonado:!!+d.escalonado,sujeto_meta:!!+d.sujeto_meta,activo:!!+d.activo}); setModalDisc(true); }}><i className="bi bi-pencil"></i> Editar</button>
+                      <button className="btn btn-danger btn-sm" onClick={()=>deleteDiscount(d.id)}><i className="bi bi-trash"></i></button>
+                    </div>
+                  </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ══ USUARIOS ══ */}
+        {activeTab==="usuarios"&&(
+          <>
+            <div className="page-header">
+              <div>
+                <h2 className="page-title">Usuarios</h2>
+                <p className="page-subtitle">
+                  {selectedLinea?"Gestiona usuarios y sus valores para: "+linea?.nombre:"Gestión global de usuarios — selecciona una línea para ver sus valores"}
+                </p>
+              </div>
+              <button className="btn btn-primary" onClick={()=>{ setEditUsuario({nombre:"",email:"",activo:1}); setModalUsuario(true); }}><i className="bi bi-plus"></i> Nuevo Usuario</button>
+            </div>
+
+            {usuarios.length===0&&(
+              <div className="empty"><div className="empty-icon"><i className="bi bi-people"></i></div><p>No hay usuarios registrados.</p></div>
+            )}
+
+            {usuarios.length>0&&(
+              <div className="card" style={{padding:0,overflow:"auto"}}>
+                <table className="users-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Nombre</th>
+                      <th>Email</th>
+                      {selectedLinea&&camposNumericos.map(c=><th key={c.clave}>{c.etiqueta}</th>)}
+                      {selectedLinea&&camposFecha.map(c=><th key={c.clave}>{c.etiqueta}</th>)}
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {usuarios.map(u=>(
+                      <tr key={u.id}>
+                        <td style={{color:"var(--text-tertiary)",fontFamily:"var(--font-mono)",fontSize:12}}>{u.id}</td>
+                        <td style={{fontWeight:600}}>{u.nombre}</td>
+                        <td style={{color:"var(--text-secondary)",fontSize:13}}>{u.email}</td>
+                        {selectedLinea&&camposNumericos.map(c=>(
+                          <td key={c.clave} style={{fontFamily:"var(--font-mono)",fontSize:13,color:"var(--accent-text)"}}>
+                            {u.valores?.[c.clave]!==undefined ? n0(u.valores[c.clave]).toLocaleString("es-MX") : <span style={{color:"var(--text-tertiary)"}}>—</span>}
+                          </td>
+                        ))}
+                        {selectedLinea&&camposFecha.map(c=>(
+                          <td key={c.clave} style={{fontSize:13}}>
+                            {u.valores?.[c.clave]
+                              ?<span className={esFechaVigente(u.valores[c.clave])?"fecha-vigente":"fecha-vencida"}>
+                                <i className={"bi bi-calendar"+(esFechaVigente(u.valores[c.clave])?"-check":"-x")} style={{marginRight:4}}></i>
+                                {u.valores[c.clave]}
+                               </span>
+                              :<span style={{color:"var(--text-tertiary)"}}>—</span>
+                            }
+                          </td>
+                        ))}
+                        <td><span className={u.activo?"badge-active":"badge-inactive"}>{u.activo?"Activo":"Inactivo"}</span></td>
+                        <td>
+                          <div style={{display:"flex",gap:6}}>
+                            <button className="btn btn-secondary btn-sm" onClick={()=>{ setEditUsuario({...u}); setModalUsuario(true); }}><i className="bi bi-pencil"></i></button>
+                            {selectedLinea&&(
+                              <button className="btn btn-primary btn-sm" title="Editar valores" onClick={()=>{ setEditValores({usuario:u,valores:{...(u.valores||{})}}); setModalValores(true); }}><i className="bi bi-table"></i> Valores</button>
+                            )}
+                            <button className="btn btn-danger btn-sm" onClick={()=>deleteUsuario(u.id)}><i className="bi bi-trash"></i></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ══ CALCULADORA ══ */}
+        {activeTab==="calculadora"&&(
+          <>
+            {!linea?(
+              <div className="empty"><div className="empty-icon"><i className="bi bi-arrow-left"></i></div><p>Selecciona una línea del menú lateral.</p></div>
+            ):(
+              <>
+                <div className="page-header">
+                  <div>
+                    <h2 className="page-title">Calculadora · {linea.nombre}</h2>
+                    <p className="page-subtitle">Precio Base: <strong style={{color:"var(--accent)"}}>{fmt(linea.precio_base)}</strong></p>
+                  </div>
+                  {res&&<button className="btn btn-success" onClick={saveCotizacion}><i className="bi bi-save"></i> Guardar Cotización</button>}
+                </div>
+
+                {campos.length===0?(
+                  <div className="empty">
+                    <div className="empty-icon"><i className="bi bi-wrench-adjustable"></i></div>
+                    <p style={{marginBottom:16}}>Esta línea no tiene campos configurados.<br/>Ve a <strong>Campos de Entrada</strong> para crear los inputs de la calculadora.</p>
+                    <button className="btn btn-primary" onClick={()=>setActiveTab("campos")}><i className="bi bi-wrench-adjustable"></i> Ir a Campos de Entrada</button>
+                  </div>
+                ):(
+                  <>
+                    <div className="calc-grid">
+                      {/* Inputs numéricos agrupados por sección */}
+                      {Object.keys(secciones).length===0?(
+                        <div className="calc-section">
+                          <div className="calc-section-title"><i className="bi bi-card-text"></i> Datos de Entrada</div>
+                          <p style={{color:"var(--text-secondary)",fontSize:13}}>Solo hay campos calculados, checkboxes o fechas.</p>
+                        </div>
+                      ):(
+                        Object.entries(secciones).map(([sec,lista])=>(
+                          <div className="calc-section" key={sec}>
+                            <div className="calc-section-title"><i className="bi bi-card-text"></i> {sec==="general"?"Datos Generales":sec.charAt(0).toUpperCase()+sec.slice(1)}</div>
+                            {lista.map(c=>(
+                              <div className="form-group" key={c.clave}>
+                                <label>{c.etiqueta}</label>
+                                {c.tipo==="texto"
+                                  ?<input type="text" value={calc[c.clave]??""} onChange={e=>setC(c.clave,e.target.value)}/>
+                                  :<input type="number" value={calc[c.clave]??""} onChange={e=>setC(c.clave,e.target.value)} placeholder="0"/>
+                                }
+                              </div>
+                            ))}
+                          </div>
+                        ))
+                      )}
+
+                      {/* Checkboxes */}
+                      {checkboxesCampos.length>0&&(
+                        <div className="calc-section">
+                          <div className="calc-section-title"><i className="bi bi-check-circle"></i> Condiciones</div>
+                          {checkboxesCampos.map(c=>(
+                            <div className="checkbox-row" key={c.clave}>
+                              <input type="checkbox" id={"chk_"+c.clave} checked={!!calc[c.clave]} onChange={e=>setC(c.clave,e.target.checked)}/>
+                              <label htmlFor={"chk_"+c.clave} style={{marginBottom:0,cursor:"pointer"}}>{c.etiqueta}</label>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* ── Fechas de cumplimiento (NUEVO) ── */}
+                      {fechasCampos.length>0&&(
+                        <div className="calc-section">
+                          <div className="calc-section-title"><i className="bi bi-calendar-event"></i> Fechas de Cumplimiento</div>
+                          {fechasCampos.map(c=>(
+                            <div className="form-group" key={c.clave}>
+                              <label>{c.etiqueta}</label>
+                              <input type="date" value={calc[c.clave]??""} onChange={e=>setC(c.clave,e.target.value)}/>
+                              {calc[c.clave]&&(
+                                <div className={esFechaVigente(calc[c.clave])?"fecha-vigente":"fecha-vencida"} style={{fontSize:12,marginTop:6,display:"flex",alignItems:"center",gap:6}}>
+                                  <i className={"bi bi-calendar"+(esFechaVigente(calc[c.clave])?"-check":"-x")}></i>
+                                  {esFechaVigente(calc[c.clave])?"Vigente — aplica descuento de pago puntual":"Vencida — no aplica descuento de pago puntual"}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Métricas calculadas */}
+                      {metricasCampos.length>0&&(
+                        <div className="calc-section">
+                          <div className="calc-section-title"><i className="bi bi-bar-chart-line"></i> Métricas Calculadas</div>
+                          {res&&metricasCampos.map(c=>(
+                            <div className="metric" key={c.clave}>
+                              <div className="metric-val">{renderMetricaVal(c)}</div>
+                              <div className="metric-lbl">{c.etiqueta}</div>
+                            </div>
+                          ))}
+                          {res&&(()=>{
+                            // Mostrar estado de meta solo si hay campo de cobertura o campo meta
+                            const tieneIndicadorMeta = campos.some(c =>
+                              c.activo && (
+                                (c.tipo==="porcentaje" && c.formula?.tipo!=="crecimiento") ||
+                                (c.tipo==="numero" && /meta/i.test(c.clave))
+                              )
+                            );
+                            if(!tieneIndicadorMeta) return null;
+                            return(
+                              <div className="metric">
+                                <div className="metric-val">{res.metaCumplida?"✅ Cumplida":"❌ No cumplida"}</div>
+                                <div className="metric-lbl">Meta</div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Tabla desglose */}
+                    {res?.rows?.length>0&&(
+                      <div className="calc-section">
+                        <div className="calc-section-title"><i className="bi bi-clipboard-data"></i> Desglose de Descuentos</div>
+                        <table className="results-table">
+                          <thead><tr><th>Descripción</th><th>% Descuento</th><th>Desc. Aplicado</th><th>Precio Resultante</th><th>Estado</th></tr></thead>
+                          <tbody>
+                            <tr><td style={{fontWeight:600}}>Precio Base</td><td>—</td><td>—</td><td>{fmt(linea.precio_base)}</td><td></td></tr>
+                            {res.rows.map(r=>(
+                              <tr key={r.id}>
+                                <td>{r.nombre}</td>
+                                <td style={{color:r.pct>0?"var(--success)":"var(--text-tertiary)"}}>{pctFmt(r.pct)}</td>
+                                <td style={{color:"var(--danger)"}}>{r.pct>0?"−"+fmt(r.descAplicado).replace("$",""):"—"}</td>
+                                <td>{fmt(r.resultado)}</td>
+                                <td>{r.bloqueadoPorMeta?<span className="tag tag-warn">Sin meta</span>:r.pct>0?<span className="tag tag-ok">Aplicado</span>:<span className="tag tag-off">N/A</span>}</td>
+                              </tr>
+                            ))}
+                            <tr className="final"><td>Precio Final</td><td></td><td></td><td>{fmt(res.precioFinal)}</td><td></td></tr>
+                          </tbody>
+                        </table>
+                        <p style={{fontSize:12,color:"var(--text-tertiary)",marginTop:10}}>* Los descuentos "Sin meta" requieren cumplir la meta firmada.</p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+          </>
+        )}
+
+        {/* ══ HISTORIAL ══ */}
+        {activeTab==="historial"&&(
+          <>
+            <div className="page-header">
+              <div><h2 className="page-title">Historial de Cotizaciones</h2><p className="page-subtitle">{linea?.nombre}</p></div>
+            </div>
+            {historial.length===0?(<div className="empty"><div className="empty-icon"><i className="bi bi-folder2-open"></i></div><p>No hay cotizaciones guardadas.</p></div>):(
+              <div className="card">
+                <table className="results-table">
+                  <thead><tr><th>#</th><th>Usuario</th><th>Precio Final</th><th>Fecha</th><th></th></tr></thead>
+                  <tbody>
+                    {historial.map(c=>(
+                      <tr key={c.id}>
+                        <td style={{color:"var(--text-tertiary)"}}>{c.id}</td>
+                        <td style={{fontSize:13}}>{c.usuario_nombre||<span style={{color:"var(--text-tertiary)"}}>Admin</span>}</td>
+                        <td style={{color:"var(--accent-text)",fontWeight:600}}>{fmt(c.precio_final)}</td>
+                        <td style={{color:"var(--text-tertiary)",fontSize:12}}>{new Date(c.created_at).toLocaleString("es-MX")}</td>
+                        <td><button className="btn btn-danger btn-sm" onClick={()=>deleteCotizacion(c.id)}><i className="bi bi-trash"></i></button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+      </main>
+
+      {/* ── MODALES ── */}
+
+      {/* Modal Línea */}
+      {modalLinea&&editLinea&&(
+        <Modal title={editLinea.id?"Editar Línea":"Nueva Línea"} onClose={()=>setModalLinea(false)}>
+          <div className="form-group"><label>Nombre</label><input type="text" value={editLinea.nombre} onChange={e=>setEditLinea({...editLinea,nombre:e.target.value})}/></div>
+          <div className="form-group"><label>Precio Base ($)</label><input type="number" value={editLinea.precio_base} onChange={e=>setEditLinea({...editLinea,precio_base:e.target.value})}/></div>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <label className="toggle"><input type="checkbox" checked={!!+editLinea.activa} onChange={()=>setEditLinea({...editLinea,activa:editLinea.activa?0:1})}/><span className="slider"></span></label>
+            <span style={{fontSize:13}}>Activa</span>
+          </div>
+          <div className="modal-footer" style={{padding:"16px 0 0"}}>
+            <button className="btn btn-secondary" onClick={()=>setModalLinea(false)}>Cancelar</button>
+            <button className="btn btn-primary" onClick={saveLinea}>Guardar</button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal Campo */}
+      {modalCampo&&editCampo&&(
+        <Modal title={editCampo.id?"Editar Campo":"Nuevo Campo"} onClose={()=>setModalCampo(false)} wide>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Etiqueta (visible al usuario)</label>
+              <input type="text" value={editCampo.etiqueta} onChange={e=>setEditCampo({...editCampo,etiqueta:e.target.value})} placeholder="Ej: Fecha Pago Puntual"/>
+            </div>
+            <div className="form-group">
+              <label>Clave interna (sin espacios)</label>
+              <input type="text" value={editCampo.clave} onChange={e=>setEditCampo({...editCampo,clave:e.target.value.replace(/\s+/g,"_")})} placeholder="Ej: fechaPagoPuntual"/>
+              <div className="formula-hint">Puede ser cualquier clave. Se usa en los descuentos como "Depende de".</div>
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Tipo</label>
+              <select value={editCampo.tipo} onChange={e=>setEditCampo({...editCampo,tipo:e.target.value,formula:null})}>
+                <option value="numero">Número — el usuario escribe un número</option>
+                <option value="checkbox">Checkbox — sí / no</option>
+                <option value="texto">Texto — campo de texto libre</option>
+                <option value="fecha">📅 Fecha — fecha de cumplimiento (pago puntual, etc.)</option>
+                <option value="suma">Suma — calculado: suma de otros campos</option>
+                <option value="porcentaje">Porcentaje — calculado: A ÷ B × 100</option>
+              </select>
+              {editCampo.tipo==="fecha"&&(
+                <div className="fecha-hint" style={{marginTop:8}}>
+                  <i className="bi bi-info-circle"></i>
+                  <span>
+                    El campo fecha activa descuentos cuando la fecha ingresada es <strong>mayor o igual a hoy</strong>.<br/>
+                    Ejemplo: liga este campo a un descuento de <em>Pago Puntual</em> (checkbox o fijo) para que solo aplique si el compromiso de pago está vigente.
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="form-group">
+              <label>Orden de aparición</label>
+              <input type="number" value={editCampo.orden??99} onChange={e=>setEditCampo({...editCampo,orden:+e.target.value})}/>
+            </div>
+          </div>
+          {editCampo.tipo==="suma"&&(
+            <div className="form-group">
+              <label>Campos a sumar (claves separadas por coma)</label>
+              <input type="text" value={Array.isArray(editCampo.formula)?editCampo.formula.join(","):(editCampo.formula||"")} onChange={e=>setEditCampo({...editCampo,formula:e.target.value.split(",").map(s=>s.trim()).filter(Boolean)})} placeholder="clave1,clave2"/>
+              <div className="formula-hint">Escribe las claves exactas separadas por coma.</div>
+            </div>
+          )}
+          {editCampo.tipo==="porcentaje"&&(
+            <>
+              <div className="form-row">
+                <div className="form-group"><label>Numerador (clave)</label><input type="text" value={editCampo.formula?.numerador||""} onChange={e=>setEditCampo({...editCampo,formula:{...(editCampo.formula||{}),numerador:e.target.value}})}/></div>
+                <div className="form-group"><label>Denominador (clave)</label><input type="text" value={editCampo.formula?.denominador||""} onChange={e=>setEditCampo({...editCampo,formula:{...(editCampo.formula||{}),denominador:e.target.value}})}/></div>
+              </div>
+              <div className="form-group">
+                <label>Tipo</label>
+                <select value={editCampo.formula?.tipo||"normal"} onChange={e=>setEditCampo({...editCampo,formula:{...(editCampo.formula||{}),tipo:e.target.value}})}>
+                  <option value="normal">(num ÷ den) × 100 — cobertura</option>
+                  <option value="crecimiento">((num − den) ÷ den) × 100 — crecimiento</option>
+                </select>
+              </div>
+            </>
+          )}
+          <div style={{display:"flex",alignItems:"center",gap:10,marginTop:4}}>
+            <label className="toggle"><input type="checkbox" checked={!!editCampo.activo} onChange={()=>setEditCampo({...editCampo,activo:!editCampo.activo})}/><span className="slider"></span></label>
+            <span style={{fontSize:13}}>Activo</span>
+          </div>
+          <div className="modal-footer" style={{padding:"16px 0 0"}}>
+            <button className="btn btn-secondary" onClick={()=>setModalCampo(false)}>Cancelar</button>
+            <button className="btn btn-primary" onClick={saveCampo}>Guardar</button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal Descuento */}
+      {modalDisc&&editDisc&&(
+        <Modal title={editDisc.id?"Editar Descuento":"Nuevo Descuento"} onClose={()=>setModalDisc(false)} wide>
+          <div className="form-group"><label>Nombre</label><input type="text" value={editDisc.nombre} onChange={e=>setEditDisc({...editDisc,nombre:e.target.value})}/></div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Depende de</label>
+              <select value={editDisc.depende_de} onChange={e=>setEditDisc({...editDisc,depende_de:e.target.value})}>
+                {camposDisponibles.length>0
+                  ?camposDisponibles.map(c=><option key={c.clave} value={c.clave}>{c.clave} — {c.etiqueta} [{c.tipo}]</option>)
+                  :<option value="">— Primero crea campos —</option>
+                }
+              </select>
+              {/* Info contextual según tipo del campo seleccionado */}
+              {(()=>{
+                const cf=camposActivos.find(c=>c.clave===editDisc.depende_de);
+                if(cf?.tipo==="fecha") return(
+                  <div className="link-info-box" style={{marginTop:8}}>
+                    <i className="bi bi-calendar-event"></i> <strong>Campo Fecha:</strong> el descuento se aplicará automáticamente si la fecha ingresada es <strong>mayor o igual a hoy</strong>. Ideal para <em>Pago Puntual</em>.
+                  </div>
+                );
+                if(cf?.tipo==="porcentaje"&&editDisc.escalonado) return(
+                  <div className="link-info-box" style={{marginTop:8,background:"rgba(167,139,250,.08)",borderColor:"rgba(167,139,250,.25)",color:"#a78bfa"}}>
+                    <i className="bi bi-percent"></i> <strong>Escalonado por %:</strong> define rangos de porcentaje (ej: 0%–10%, 10%–20%) con su descuento correspondiente.
+                  </div>
+                );
+                return null;
+              })()}
+            </div>
+            <div className="form-group"><label>Orden</label><input type="number" value={editDisc.orden??99} onChange={e=>setEditDisc({...editDisc,orden:+e.target.value})}/></div>
+          </div>
+          <div style={{display:"flex",gap:24,marginBottom:14,flexWrap:"wrap"}}>
+            {[["escalonado","Escalonado"],["sujeto_meta","Sujeto a Meta"],["activo","Activo"]].map(([k,lbl])=>(
+              <div key={k} style={{display:"flex",alignItems:"center",gap:8}}>
+                <label className="toggle"><input type="checkbox" checked={!!editDisc[k]} onChange={()=>setEditDisc({...editDisc,[k]:!editDisc[k]})}/><span className="slider"></span></label>
+                <span style={{fontSize:13}}>{lbl}</span>
+              </div>
+            ))}
+          </div>
+          {/* Si NO es escalonado: campo valor fijo */}
+          {!editDisc.escalonado&&(
+            <div className="form-group">
+              <label>Valor (%)</label>
+              <input type="number" step="0.1" min="0" max="100" value={(parseFloat(editDisc.valor||0)*100).toFixed(1)} onChange={e=>setEditDisc({...editDisc,valor:parseFloat(e.target.value)/100})}/>
+            </div>
+          )}
+          {/* Si ES escalonado: mostrar el editor correcto según tipo de campo */}
+          {editDisc.escalonado&&(()=>{
+            const cf=camposActivos.find(c=>c.clave===editDisc.depende_de);
+            const esPct=cf?.tipo==="porcentaje";
+            return(
+              <div className="form-group">
+                <label>{esPct?"Tramos por Rango de Porcentaje (%)":"Tramos Escalonados (número)"}</label>
+                {esPct
+                  ?<TramosEditorPct tramos={editDisc.tramos||[]} onChange={tramos=>setEditDisc({...editDisc,tramos})}/>
+                  :<TramosEditor tramos={editDisc.tramos||[]} onChange={tramos=>setEditDisc({...editDisc,tramos})}/>
+                }
+              </div>
+            );
+          })()}
+          <div className="modal-footer" style={{padding:"16px 0 0"}}>
+            <button className="btn btn-secondary" onClick={()=>setModalDisc(false)}>Cancelar</button>
+            <button className="btn btn-primary" onClick={saveDiscount}>Guardar</button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal Usuario */}
+      {modalUsuario&&editUsuario&&(
+        <Modal title={editUsuario.id?"Editar Usuario":"Nuevo Usuario"} onClose={()=>setModalUsuario(false)}>
+          <div className="form-group"><label>Nombre completo</label><input type="text" value={editUsuario.nombre} onChange={e=>setEditUsuario({...editUsuario,nombre:e.target.value})}/></div>
+          <div className="form-group"><label>Correo electrónico</label><input type="email" value={editUsuario.email} onChange={e=>setEditUsuario({...editUsuario,email:e.target.value})}/></div>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <label className="toggle"><input type="checkbox" checked={!!+editUsuario.activo} onChange={()=>setEditUsuario({...editUsuario,activo:editUsuario.activo?0:1})}/><span className="slider"></span></label>
+            <span style={{fontSize:13}}>Activo</span>
+          </div>
+          <div className="modal-footer" style={{padding:"16px 0 0"}}>
+            <button className="btn btn-secondary" onClick={()=>setModalUsuario(false)}>Cancelar</button>
+            <button className="btn btn-primary" onClick={saveUsuario}>Guardar</button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal Valores de usuario */}
+      {modalValores&&editValores&&(
+        <Modal title={"Valores de "+editValores.usuario.nombre} onClose={()=>setModalValores(false)} wide>
+          <p style={{fontSize:13,color:"var(--text-secondary)",marginBottom:16}}>
+            Línea: <strong>{linea?.nombre}</strong> · Define los valores numéricos y fechas de este usuario.<br/>
+            Los checkboxes los marca el usuario en tiempo real al usar la calculadora.
+          </p>
+          {camposNumericos.length===0&&camposFecha.length===0&&(
+            <div className="formula-hint">No hay campos numéricos o de fecha configurados para esta línea.</div>
+          )}
+          {camposNumericos.map(c=>(
+            <div className="form-group" key={c.clave}>
+              <label>{c.etiqueta} <span className="clave-mono" style={{fontSize:11}}>({c.clave})</span></label>
+              <input type="number" value={editValores.valores[c.clave]??""} placeholder="0"
+                onChange={e=>setEditValores({...editValores,valores:{...editValores.valores,[c.clave]:e.target.value}})}/>
+            </div>
+          ))}
+          {/* ── Campos de fecha en modal de valores (NUEVO) ── */}
+          {camposFecha.length>0&&(
+            <>
+              <div style={{borderTop:"1px solid var(--border)",paddingTop:14,marginTop:4,marginBottom:14}}>
+                <div style={{fontSize:12,fontWeight:600,textTransform:"uppercase",letterSpacing:".06em",color:"var(--text-secondary)",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
+                  <i className="bi bi-calendar-event"></i> Fechas de Cumplimiento
+                </div>
+                {camposFecha.map(c=>(
+                  <div className="form-group" key={c.clave}>
+                    <label>{c.etiqueta} <span className="clave-mono" style={{fontSize:11}}>({c.clave})</span></label>
+                    <input type="date" value={editValores.valores[c.clave]??""} 
+                      onChange={e=>setEditValores({...editValores,valores:{...editValores.valores,[c.clave]:e.target.value}})}/>
+                    {editValores.valores[c.clave]&&(
+                      <div className={esFechaVigente(editValores.valores[c.clave])?"fecha-vigente":"fecha-vencida"} style={{fontSize:12,marginTop:6,display:"flex",alignItems:"center",gap:6}}>
+                        <i className={"bi bi-calendar"+(esFechaVigente(editValores.valores[c.clave])?"-check":"-x")}></i>
+                        {esFechaVigente(editValores.valores[c.clave])?"Vigente — descuento de pago puntual aplicará":"Vencida — descuento de pago puntual NO aplicará"}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          <div className="modal-footer" style={{padding:"16px 0 0"}}>
+            <button className="btn btn-secondary" onClick={()=>setModalValores(false)}>Cancelar</button>
+            <button className="btn btn-primary" onClick={saveValoresUsuario}>Guardar Valores</button>
+          </div>
+        </Modal>
+      )}
+
+      {toast&&<Toast msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

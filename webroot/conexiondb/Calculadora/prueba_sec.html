@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secundaria</title>
+    <link rel="icon" href="presentacion/blog.png">
+    <link rel="stylesheet" href="css.css">
+    <style>
+        body {
+            background-image: url('fondo/secundaria.jpg');
+        }
+        .regresar-boton {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background-color: #28a745;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 90%;
+        }
+        .regresar-boton:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div style="margin-left: 15%;">
+            <ul>
+            <button><a href="Presentacion/MDAPrimaria.html">MDA Primaria</a></button>
+            <button><a href="MDApreescolar.html">MDA Preescolar</a></button>
+            <button><a href="Asomate.html">Asomate</a></button>
+            <button><a href="RAP.html">RAP</a></button>
+            <button><a href="Secundaria.html">Secundaria OPEN UP</a></button>
+            </ul>
+        </div>
+        <br><br>
+        <div class="color-row left"></div>
+        <div class="label-input-container" style="margin-left: 0;">
+            <img src="presentacion/logoMontenegro.png">
+        </div>
+        <div class="label-input-container">
+            <h1>SECUNDARIA OPEN UP</h1>
+        </div><br>
+        <div class="input-container" style="margin-bottom: 20px; margin-left: 10%;">
+            <label for="precioBase">PRECIO BASE PUBICO $</label>
+            <input type="number" id="precioBase" value="465.00" readonly
+                style="margin-left:2%;background-color: #3C8DBC;color: aliceblue;text-align: center;">
+
+            <label for="precioBase1" style="margin-left: 2%;">PRECIO BASE MAESTRO $</label>
+            <input type="number" id="precioBase1" value="400.00" readonly
+                style="margin-left: 3.5%;background-color: #3C8DBC; color: aliceblue;text-align: center;">
+        </div>
+        <br>
+        <div class="label-input-container">
+            <label for="campo1">UNIDADES COMPRADAS EDICIÓN 2024:</label>
+            <!-- <input type="number" id="campo1" value="" oninput="calcularDescuentos()" style="margin-left: 33%;background-color: beige;"> -->
+            <input type="number" id="campo1" value="" oninput="calcularDescuentos2();" style="margin-left: 33%;background-color: beige;">
+        </div>
+        <div class="input-container" style="margin-bottom: 20px; margin-left: 10%;">
+            <label for="campo2">UNIDADES COMPRADAS EDICION 2023:</label>
+            <input type="number" id="campo2" value="" oninput="calcularDescuentos()"
+                style="margin-left: 37.5%;background-color: beige;">
+        </div>
+        <p style="margin-left: 95px; margin-bottom: 30px;margin-top: 30px;font-weight: bold;">VENTA TOTAL:
+            <span id="sumaUnidades" style="font-weight: bold;margin-left: 68%; font-size: 20px;">0</span>
+        </p>
+        <!-- <div class="input-container" style="margin-bottom: 20px; margin-left: 10%;">
+            <label for="metaFirmada">META :</label>
+            <input type="number" id="meta" value="" oninput="calcularDescuentos()" style="margin-left: 64.5%;">
+        </div> -->
+        <!-- <p style="margin-left: 95px; margin-bottom: 30px;margin-top: 30px;font-weight: bold;">Crecimiento meta:
+            <span id="meta_porcentaje" style="font-weight: bold;margin-left: 64.5%; font-size: 20px;">0</span>
+        </p> -->
+        <div class="input-container" style="margin-bottom: 20px; margin-left: 10%;">
+            <label for="pagoPuntual">PAGO PUNTUAL:</label>
+            <input type="checkbox" id="pagoPuntual" onchange="calcularDescuentos()" style="margin-left: 66.5%;">
+            <input type="checkbox" id="pagoPuntual" onchange="calcularDescuentos2()" style="margin-left: 66.5%;">
+        </div>
+        <div class="input-container" style="margin-bottom: 20px; margin-left: 10%;">
+            <label for="prontoPago">PRONTO PAGO:</label>
+            <input type="checkbox" id="prontoPago" onchange="calcularDescuentos()" style="margin-left: 67.5%;">
+            <input type="checkbox" id="prontoPago" onchange="calcularDescuentos2()" style="margin-left: 67.5%;">
+
+        </div>
+        <div class="input-container" style="margin-bottom: 20px;margin-left: 10%;">
+            <label for="noDevolucion">No devolución:</label>
+            <input type="checkbox" id="noDevolucion" onchange="calcularDescuentos()" style="margin-left: 67.5%;">
+            <input type="checkbox" id="noDevolucion" onchange="calcularDescuentos2()" style="margin-left: 67.5%;">
+
+        </div>
+        <br><br>
+        <!-- Agregar la tabla -->
+        <table border="1">
+            <tr style="background-color: #3C8DBC; color:white;">
+                <th style="background-color: #3C8DBC;">Concepto</th>
+                <th style="background-color: #3C8DBC;">Porcentaje Descuento</th>
+                <th style="background-color: #3C8DBC;">Descuento</th>
+                <th style="background-color: #3C8DBC;">Resultado con Descuento</th>
+                <th style="background-color: #3C8DBC;"><span id="unidadesPrecioRegular"></span></th>
+            </tr>
+            <tr>
+                <td>Base (35%)</td>
+                <td id="porcentajeBase">35%</td>
+                <td id="descuentoBase"></td>
+                <td id="resultadoBase"></td>
+                <td id="multi0"></td>
+            </tr>
+            <tr>
+                <td>Pago Puntual (3%)</td>
+                <td id="porcentajePagoPuntual"></td>
+                <td id="descuentoPagoPuntual"></td>
+                <td id="resultadoPagoPuntual"></td>
+                <td id="multi1"></td>
+            </tr>
+            <!-- <tr>
+                <td>Meta (4%)</td>
+                <td id="porcentajeMeta"></td>
+                <td id="descuentoMeta"></td>
+                <td id="resultadoMeta"></td>
+                <td id="multi2"></td>
+            </tr> -->
+            <tr>
+                <td>Pronto Pago (2%)</td>
+                <td id="porcentajeProntoPago"></td>
+                <td id="descuentoProntoPago"></td>
+                <td id="resultadoProntoPago"></td>
+                <td id="multi3"></td>
+            </tr>
+
+            <tr>
+                <td>No devolución (2%)</td>
+                <td id="porcentajeNoDevolucion"></td>
+                <td id="descuentoNoDevolucion"></td>
+                <td id="resultadoNoDevolucion"></td>
+                <td id="multi5"></td>
+            </tr>
+            <tr>
+                <td>Total de descuento</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td id="total" style="background-color: rgb(88, 151, 247);"></td>
+            </tr>
+        </table>
+        <!-- Resultado de la venta total -->
+        <br>
+        <!-- Segunda tabla -->
+        <table border="1">
+            <tr style="background-color: #3C8DBC; color:white;">
+                <th style="background-color: #3C8DBC;">Concepto</th>
+                <th style="background-color: #3C8DBC;">Porcentaje Descuento</th>
+                <th style="background-color: #3C8DBC;">Descuento</th>
+                <th style="background-color: #3C8DBC;">Resultado con Descuento</th>
+                <th style="background-color: #3C8DBC;"><span id="unidadeAnticipadas1"></span></th>
+            </tr>
+            <tr>
+                <td>Base (41%)</td>
+                <td id="porcentajeBase2">41%</td>
+                <td id="descuentoBase2"></td>
+                <td id="resultadoBase2"></td>
+                <td id="multi02"></td>
+            </tr>
+            <tr>
+                <td>Pago Puntual (3%)</td>
+                <td id="porcentajePagoPuntual2"></td>
+                <td id="descuentoPagoPuntual2"></td>
+                <td id="resultadoPagoPuntual2"></td>
+                <td id="multi12"></td>
+            </tr>
+            <tr>
+                <td>Pronto Pago (2%)</td>
+                <td id="porcentajeProntoPago2"></td>
+                <td id="descuentoProntoPago2"></td>
+                <td id="resultadoProntoPago2"></td>
+                <td id="multi32"></td>
+            </tr>
+            <tr>
+                <td>No devolución (2%)</td>
+                <td id="porcentajeNoDevolucion2"></td>
+                <td id="descuentoNoDevolucion2"></td>
+                <td id="resultadoNoDevolucion2"></td>
+                <td id="multi52"></td>
+            </tr>
+            <tr>
+                <td>Total de descuento</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td id="total2" style="background-color: rgb(88, 151, 247);"></td>
+            </tr>
+        </table>
+
+    </div>
+
+    <script>
+        function calcularDescuentos() {
+            var precioBase = parseFloat(document.getElementById("precioBase").value) || 0;
+            var unidadesPrecioRegular = parseFloat(document.getElementById("campo2").value) || 0;
+            var pagoPuntualChecked = document.getElementById("pagoPuntual").checked;
+            // var meta = parseFloat(document.getElementById("meta").value) || 0;
+            var prontoPagoChecked = document.getElementById("prontoPago").checked;
+            var noDevolucionChecked = document.getElementById("noDevolucion").checked;
+            var unidadesAnticipadas = parseFloat(document.getElementById("campo1").value) || 0;
+
+            document.getElementById("unidadesPrecioRegular").textContent = unidadesPrecioRegular.toLocaleString();
+            document.getElementById("sumaUnidades").textContent = (unidadesPrecioRegular + unidadesAnticipadas).toLocaleString();
+            // Calcular descuento base
+            var porcentajeDescuentoBase = 35;
+            var descuentoBase = precioBase * (porcentajeDescuentoBase / 100);
+            var resultadoBase = precioBase - descuentoBase;
+            document.getElementById("descuentoBase").textContent = '$' + descuentoBase.toFixed(3);
+            document.getElementById("resultadoBase").textContent = '$' + resultadoBase.toFixed(2);
+            document.getElementById("multi0").textContent = '';
+
+            // // Calcular el porcentaje de crecimiento respecto a la meta
+            // var crecimiento = ((unidadesPrecioRegular - meta) / meta) * 100;
+
+            // // Calcular el porcentaje de descuento de acuerdo al crecimiento
+            // var porcentajeDescuentoMeta = 0;
+            // if (crecimiento >= 5 && crecimiento <= 10) {
+            //     porcentajeDescuentoMeta = 2;
+            // } else if (crecimiento > 10 && crecimiento <= 15) {
+            //     porcentajeDescuentoMeta = 4;
+            // } else if (crecimiento > 15) {
+            //     porcentajeDescuentoMeta = 6;
+            // }
+
+            // var resultadoCrecimientoMeta =(unidadesPrecioRegular * porcentajeDescuentoMeta / 100);
+
+            // Calcular descuento pago puntual
+            var porcentajeDescuentoPagoPuntual = pagoPuntualChecked ? 2 : 0;
+            var descuentoPagoPuntual = precioBase * (porcentajeDescuentoPagoPuntual / 100);
+            var resultadoPagoPuntual = resultadoBase - descuentoPagoPuntual;
+            var multiplicarPagoPuntual = descuentoPagoPuntual * unidadesPrecioRegular;
+            document.getElementById("porcentajePagoPuntual").textContent = porcentajeDescuentoPagoPuntual + "%";
+            document.getElementById("descuentoPagoPuntual").textContent = '$' + descuentoPagoPuntual.toFixed(3);
+            document.getElementById("resultadoPagoPuntual").textContent = '$' + resultadoPagoPuntual.toFixed(2);
+            document.getElementById("multi1").textContent = '$' + multiplicarPagoPuntual.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            // var resultadodescuentoMeta = (resultadoPagoPuntual - (resultadoBase * porcentajeDescuentoMeta / 100))
+
+            // Calcular descuento pronto pago
+            var porcentajeDescuentoProntoPago = prontoPagoChecked ? 3 : 0;
+            var descuentoProntoPago = precioBase * (porcentajeDescuentoProntoPago / 100);
+            var resultadoProntoPago = resultadoPagoPuntual - descuentoProntoPago;
+            var multiplicarProntoPago = descuentoProntoPago * unidadesPrecioRegular;
+            document.getElementById("porcentajeProntoPago").textContent = porcentajeDescuentoProntoPago + "%";
+            document.getElementById("descuentoProntoPago").textContent = '$' + descuentoProntoPago.toFixed(3);
+            document.getElementById("resultadoProntoPago").textContent = '$' + resultadoProntoPago.toFixed(2);
+            document.getElementById("multi3").textContent = '$' + multiplicarProntoPago.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            // Calcular descuento no devolución
+            var porcentajeDescuentoNoDevolucion = noDevolucionChecked ? 2 : 0;
+            var descuentoNoDevolucion = precioBase * (porcentajeDescuentoNoDevolucion / 100);
+            var resultadoNoDevolucion = resultadoProntoPago - descuentoNoDevolucion;
+            var multiplicarNoDevolucion = descuentoNoDevolucion * unidadesPrecioRegular;
+            document.getElementById("porcentajeNoDevolucion").textContent = porcentajeDescuentoNoDevolucion + "%";
+            document.getElementById("descuentoNoDevolucion").textContent = '$' + descuentoNoDevolucion.toFixed(3);
+            document.getElementById("resultadoNoDevolucion").textContent = '$' + resultadoNoDevolucion.toFixed(2);
+            document.getElementById("multi5").textContent = '$' + multiplicarNoDevolucion.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            // Actualizar el porcentaje de crecimiento de la meta en la tabla
+            // document.getElementById("porcentajeMeta").textContent = porcentajeDescuentoMeta.toFixed(2) + "%";
+            // document.getElementById("descuentoMeta").textContent = '$' + (unidadesPrecioRegular * porcentajeDescuentoMeta / 100).toFixed(2);
+            // document.getElementById("resultadoMeta").textContent = '$' + resultadodescuentoMeta.toFixed(2);
+            // document.getElementById("multi2").textContent = '$' + ((resultadoBase - (resultadoBase * porcentajeDescuentoMeta / 100)) * unidadesPrecioRegular).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            // Calcular el total de descuentos
+            var suma = descuentoPagoPuntual * unidadesPrecioRegular + descuentoProntoPago * unidadesPrecioRegular + descuentoNoDevolucion * unidadesPrecioRegular;
+            document.getElementById("total").textContent = '$' + suma.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById("meta_porcentaje").textContent = crecimiento.toFixed(2) + "%";
+        }
+
+
+        function calcularDescuentos2() {
+            var precioBase1 = parseFloat(document.getElementById("precioBase1").value) || 0;
+            var unidadesAnticipadas = parseFloat(document.getElementById("campo1").value) || 0;
+            var pagoPuntualChecked = document.getElementById("pagoPuntual").checked;
+            var prontoPagoChecked = document.getElementById("prontoPago").checked;
+            var noDevolucionChecked = document.getElementById("noDevolucion").checked;
+
+            document.getElementById("unidadeAnticipadas1").textContent = unidadesAnticipadas.toLocaleString();
+
+            // Calcular descuento base para la segunda tabla
+            var porcentajeDescuentoBase2 = 41;
+            var descuentoBase2 = precioBase1 * (porcentajeDescuentoBase2 / 100);
+            var resultadoBase2 = precioBase1 - descuentoBase2;
+            var multiplicar02 = descuentoBase2 * unidadesAnticipadas;
+
+            // Calcular descuento pago puntual para la segunda tabla
+            var porcentajeDescuentoPagoPuntual2 = pagoPuntualChecked ? 3 : 0;
+            var descuentoPagoPuntual2 = resultadoBase2 * (porcentajeDescuentoPagoPuntual2 / 100);
+            var resultadoPagoPuntual2 = resultadoBase2 - descuentoPagoPuntual2;
+            var multiplicar12 = descuentoPagoPuntual2 * unidadesAnticipadas;
+
+            // Calcular descuento pronto pago para la segunda tabla
+            var porcentajeDescuentoProntoPago2 = prontoPagoChecked ? 2 : 0;
+            var descuentoProntoPago2 = resultadoBase2 * (porcentajeDescuentoProntoPago2 / 100);
+            var resultadoProntoPago2 = resultadoBase2 - descuentoProntoPago2;
+            var multiplicar32 = descuentoProntoPago2 * unidadesAnticipadas;
+
+            // Calcular descuento no devolución para la segunda tabla
+            var porcentajeDescuentoNoDevolucion2 = noDevolucionChecked ? 2 : 0;
+            var descuentoNoDevolucion2 = resultadoBase2 * (porcentajeDescuentoNoDevolucion2 / 100);
+            var resultadoNoDevolucion2 = resultadoBase2 - descuentoNoDevolucion2;
+            var multiplicar52 = descuentoNoDevolucion2 * unidadesAnticipadas;
+
+            // Calcular el total de descuentos para la segunda tabla
+            var suma2 = descuentoPagoPuntual2 + descuentoProntoPago2 + descuentoNoDevolucion2;
+
+            // Actualizar los elementos de la segunda tabla
+            document.getElementById("porcentajeBase2").textContent = porcentajeDescuentoBase2 + "%";
+            document.getElementById("descuentoBase2").textContent = '$' + descuentoBase2.toFixed(3);
+            document.getElementById("resultadoBase2").textContent = '$' + resultadoBase2.toFixed(2);
+            document.getElementById("multi02").textContent = '$' + multiplicar02.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            document.getElementById("porcentajePagoPuntual2").textContent = porcentajeDescuentoPagoPuntual2 + "%";
+            document.getElementById("descuentoPagoPuntual2").textContent = '$' + descuentoPagoPuntual2.toFixed(3);
+            document.getElementById("resultadoPagoPuntual2").textContent = '$' + resultadoPagoPuntual2.toFixed(2);
+            document.getElementById("multi12").textContent = '$' + multiplicar12.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            document.getElementById("porcentajeProntoPago2").textContent = porcentajeDescuentoProntoPago2 + "%";
+            document.getElementById("descuentoProntoPago2").textContent = '$' + descuentoProntoPago2.toFixed(3);
+            document.getElementById("resultadoProntoPago2").textContent = '$' + resultadoProntoPago2.toFixed(2);
+            document.getElementById("multi32").textContent = '$' + multiplicar32.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            document.getElementById("porcentajeNoDevolucion2").textContent = porcentajeDescuentoNoDevolucion2 + "%";
+            document.getElementById("descuentoNoDevolucion2").textContent = '$' + descuentoNoDevolucion2.toFixed(3);
+            document.getElementById("resultadoNoDevolucion2").textContent = '$' + resultadoNoDevolucion2.toFixed(2);
+            document.getElementById("multi52").textContent = '$' + multiplicar52.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            document.getElementById("total2").textContent = '$' + suma2.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+    </script>
+</body>
+
+</html>

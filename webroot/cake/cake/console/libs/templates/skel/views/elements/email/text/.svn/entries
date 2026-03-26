@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="6296"
+   name=""
+   committed-date="2008-01-01T22:18:17.477495Z"
+   url="https://svn.cakephp.org/repo/branches/1.2.x.x/cake/console/libs/templates/skel/views/elements/email/text"
+   last-author="phpnut"
+   kind="dir"
+   uuid="3807eeeb-6ff5-0310-8944-8be069107fe0"
+   repos="https://svn.cakephp.org/repo"
+   revision="6311"/>
+<entry
+   committed-rev="6296"
+   name="default.ctp"
+   text-time="2008-01-17T17:20:28.000000Z"
+   committed-date="2008-01-01T22:18:17.477495Z"
+   checksum="3f8b09b2ca3cdd456801c06fef9ec9bb"
+   last-author="phpnut"
+   kind="file"
+   prop-time="2008-01-17T17:20:27.000000Z"/>
+</wc-entries>

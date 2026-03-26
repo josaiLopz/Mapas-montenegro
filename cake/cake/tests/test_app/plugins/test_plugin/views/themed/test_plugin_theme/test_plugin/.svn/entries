@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="6155"
+   name=""
+   committed-date="2007-12-14T22:20:44.106573Z"
+   url="https://svn.cakephp.org/repo/branches/1.2.x.x/cake/tests/test_app/plugins/test_plugin/views/themed/test_plugin_theme/test_plugin"
+   last-author="gwoo"
+   kind="dir"
+   uuid="3807eeeb-6ff5-0310-8944-8be069107fe0"
+   repos="https://svn.cakephp.org/repo"
+   revision="6311"/>
+<entry
+   committed-rev="6155"
+   name="index.ctp"
+   text-time="2008-01-17T17:20:28.000000Z"
+   committed-date="2007-12-14T22:20:44.106573Z"
+   checksum="24ed125d94d2afb7c87976a1573103f3"
+   last-author="gwoo"
+   kind="file"
+   prop-time="2008-01-17T17:20:28.000000Z"/>
+</wc-entries>

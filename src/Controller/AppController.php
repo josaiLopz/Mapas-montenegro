@@ -34,7 +34,7 @@ class AppController extends Controller
         $controller = (string)$this->request->getParam('controller');
         $action = (string)$this->request->getParam('action');
 
-        if ($controller === 'Users' && in_array($action, ['login', 'logout'], true)) {
+        if ($controller === 'Users' && in_array($action, ['login', 'logout', 'forgotPassword', 'resetPassword'], true)) {
             return;
         }
 
